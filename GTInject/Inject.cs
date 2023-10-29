@@ -10,12 +10,46 @@ namespace GTInject
 {
     internal class Inject
     {
-        [Option('t', "threads", Required = false, HelpText = "Show all threads in an alertable state.", Default = false)]
-        public bool threads { get; set; }
+        public enum sourceLocation
+        {
+            embedded,
+            url,
+            disk
+        }
+        public class Options
+        {
+            [Option('t', "threads", Required = false, HelpText = "Show all threads in an alertable state.", Default = false)]
+            public bool threads { get; set; }
+
+            [Option('e', "encrypt", Required = false, HelpText = "Encrypt your raw shellcode for later use within GTInject", Default = false)]
+            public bool encrypt { get; set; }
+
+            [Option('m', "memory", Required = false, HelpText = "Select the memory allocation option", Default = 1)]
+            public int memoryoption { get; set; }
+
+            [Option('x', "execution", Required = false, HelpText = "Select the thread execution method", Default = 1)]
+            public int threadexecution { get; set; }
+
+            [Option('p', "pid", Required = false, HelpText = "Process ID to inject into")]
+            public int pid2inject { get; set; }
+
+            [Option('s', "source", Required = false, HelpText = "Select a source location for the shellcode")]
+            public string sourceShellcode { get; set; }
+            //enum.parse later
+
+            [Option('k', "xorkey", Required = false, HelpText = "Enter the xor key used to encrypt the shellcode")]
+            public string xorkey { get; set; }
+
+            [Option('h', "help", Required = false, HelpText = "Show the help menu", Default = false)]
+            public bool help { get; set; }
+
+        }
+
+
         static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<Inject>(args)
-           .WithParsed<Inject>(o =>
+            Parser.Default.ParseArguments<Inject.Options>(args)
+           .WithParsed<Inject.Options>(o =>
            {
                if (o.threads)
                {
