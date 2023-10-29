@@ -11,7 +11,7 @@ namespace GTInject.AlertableThreads
 {
     internal class Alertable
     {
-        static void Main(string[] args)
+        public static void GetThreads()
         {
             Process[] allProcs = Process.GetProcesses();
             for (int varProc = 0; varProc<allProcs.Length; varProc++)
