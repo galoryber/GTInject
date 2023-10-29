@@ -10,6 +10,8 @@ namespace GTInject
     {
         static void Main(string[] args)
         {
+
+            // Should parse args, then build each function seperately. 
         }
     }
 }
