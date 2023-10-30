@@ -24,6 +24,9 @@ namespace GTInject
             [Option('e', "encrypt", Required = false, HelpText = "Encrypt your raw shellcode for later use within GTInject", Default = false)]
             public bool encrypt { get; set; }
 
+            [Option('b', "sourcebin", Required = false, HelpText = "Select the source bin file (raw shellcode file) to encrypt")]
+            public string binPath { get; set; }
+
             [Option('m', "memory", Required = false, HelpText = "Select the memory allocation option", Default = 1)]
             public int memoryoption { get; set; }
 
@@ -54,6 +57,11 @@ namespace GTInject
                if (o.threads)
                {
                    AlertableThreads.Alertable.GetThreads();
+               }
+               else if (o.encrypt)
+               {
+                   if (o.binPath == null || o.xorkey == null) { Console.WriteLine(" Supplied the encrypt flag without supplying the source bin and output bin name (-e -b shellcode.bin -k myXorKey)"); }
+                   EncryptBin.EncryptBin.EncryptShellcode(o.binPath, o.xorkey);
                }
                else
                {
