@@ -46,7 +46,9 @@ namespace GTInject.EncryptBin
             programOutput.Append(Environment.NewLine);
 
             // Figure out the output bin
-            var filename = binPath.Split(".bin")[0];
+            var filenameext= Path.GetExtension(binPath);
+            var filename = Path.GetFileNameWithoutExtension(binPath);
+            //var filename = binPath.Split(".bin", StringSplitOptions.None)[0];  //binPath.Split(".bin")[0];
             var outputBinFile = filename + "-xord.bin";
             programOutput.Append("absolute path to write output to is " + outputBinFile);
             programOutput.Append(Environment.NewLine);
@@ -75,7 +77,7 @@ namespace GTInject.EncryptBin
             var outputBase64Payload = PrintXordB64ForFile(Xord).ToString();
             File.WriteAllText(outputTextFile, programOutput.ToString());
             File.WriteAllText(b64outputfilename, outputBase64Payload.ToString());
-
+            Console.WriteLine(" Writing all encrypted data to files in the current directory\n");
 
             //==============
             //Gzip'd Base64 Xor'd Payload

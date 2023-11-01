@@ -1,10 +1,9 @@
-﻿using CommandLine.Text;
-using CommandLine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace GTInject
 {
@@ -16,7 +15,14 @@ namespace GTInject
             url,
             disk
         }
-        public class Options
+        public enum execCommands
+        {
+            threads,
+            inject,
+            encrypt,
+            help
+        }
+       /* public class Options
         {
             [Option('t', "threads", Required = false, HelpText = "Show all threads in an alertable state.", Default = false)]
             public bool threads { get; set; }
@@ -44,14 +50,76 @@ namespace GTInject
             public string xorkey { get; set; }
 
             [Option('h', "help", Required = false, HelpText = "Show the help menu", Default = false)]
-            public bool help { get; set; }
+            public bool help { get; set; } 
 
-        }
+        }*/
 
 
         static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<Inject.Options>(args)
+            var command = args[0];
+            var enumcommandparse = Enum.TryParse<execCommands>(command, true, out var enumresult);
+            if (!(enumcommandparse))
+            {
+                Console.WriteLine("Not a valid command, try GTInject.exe help\n");
+            }
+            else if (command.ToLower() == "help") 
+            {
+                string helptext = @"
+GTInject.exe Help Menu
+
+Usage: GTInject.exe <command> <commandArgs>
+       GTInject.exe threads
+       GTInject.exe encrypt pathToSource.bin MyXorKeySecret123
+       GTInject.exe inject memoryOption execOption xorkey url binSourcePath
+
+Encrypt  -- for encrypting shellcode:
+        Shellcode from your C2 will be multibyte XOR'd and written as a base64 string in a text file
+        This is intended to help you use the injection option later
+        This is also my utility for encrypting payloads to be used in shellcode runners
+
+        Do this in preparation, not on the C2 victim machine.
+
+Threads  -- check for alertable threads:
+        This will list all threads and their current execution state
+        This is intended to help identify alertable threads, for injection options.
+
+Inject   -- choose a process injection method
+        Choose a technique for allocating the memory
+        Then choose a technique for executing the thread
+        Enter the XorKey to decrypt it with
+        Specify a location type where the encrypted shellcode is stored 
+        Specify the location
+";
+                Console.WriteLine(helptext);
+             }
+
+            else if (command.ToLower() == "encrypt")
+            {
+                string binPath = null;
+                string xorkey = null;
+                try
+                {
+                    binPath = args[1];
+                    xorkey = args[2];
+                }
+                catch
+                {
+                    Console.WriteLine( " You didn't include the needed arguments for GTInject.exe encrypt <sourceBinPath> <yourXorKeyString>");
+                }
+                EncryptBin.EncryptBin.EncryptShellcode(binPath, xorkey);
+            }
+
+            else if (command.ToLower() == "threads")
+            {
+                AlertableThreads.Alertable.GetThreads();
+            }
+
+            else if (command.ToLower() == "inject")
+            {
+                Console.WriteLine(  "build the cool stuff here");
+            }
+            /*rser.Default.ParseArguments<Inject.Options>(args)
            .WithParsed<Inject.Options>(o =>
            {
                if (o.threads)
@@ -68,7 +136,7 @@ namespace GTInject
                    Console.WriteLine($"Current Arguments: ");
                    Console.WriteLine("Quick Start Example!");
                }
-           });
+           });*/
 
             // Should parse args, then build each function seperately. 
         }
