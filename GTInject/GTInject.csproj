@@ -68,6 +68,7 @@
     <Compile Include="EncryptBin\EncryptBin.cs" />
     <Compile Include="GetShellcode\GetShellcode.cs" />
     <Compile Include="Inject.cs" />
+    <Compile Include="Injection\memory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
