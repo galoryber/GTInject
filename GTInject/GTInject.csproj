@@ -69,6 +69,7 @@
     <Compile Include="GetShellcode\GetShellcode.cs" />
     <Compile Include="Inject.cs" />
     <Compile Include="Injection\memory.cs" />
+    <Compile Include="Injection\threadexec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

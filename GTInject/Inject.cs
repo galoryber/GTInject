@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Globalization;
 using GTInject.memoryOptions;
+using GTInject.Injection;
 
 namespace GTInject
 {
@@ -64,6 +65,9 @@ Inject   -- choose a process injection method
 Memory Options
         1. WINAPI -- VirtualAllocEx, WriteProcessMemory
         2. WINAPI -- MapViewOfSection, WriteProcessMemory
+
+ThreadExec Options
+        1. WINAPI -- CreateRemoteThread
 ";
                 Console.WriteLine(helptext);
              }
@@ -121,8 +125,13 @@ Memory Options
                 catch (Exception ex) {
                     Console.WriteLine($"Other exception : {ex.Message}");
                 }
-                memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
-                Console.WriteLine(  "build the cool stuff here");
+                IntPtr memoryResponse = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                if (memoryResponse == IntPtr.Zero) { Console.WriteLine(" And you may ask yourself, 'well, how did I get here?', Leeting the days go by "); }
+                else
+                {
+                    threadexec.SelectThreadOption(memoryResponse, execOption, Pid, Tid);
+                    Console.WriteLine(" thread exec options here");
+                }
             }
  
         }
