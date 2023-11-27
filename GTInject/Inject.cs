@@ -125,11 +125,11 @@ ThreadExec Options
                 catch (Exception ex) {
                     Console.WriteLine($"Other exception : {ex.Message}");
                 }
-                IntPtr memoryResponse = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                (memoryResponse, pidResp) = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
                 if (memoryResponse == IntPtr.Zero) { Console.WriteLine(" And you may ask yourself, 'well, how did I get here?', Leeting the days go by "); }
                 else
                 {
-                    threadexec.SelectThreadOption(memoryResponse, execOption, Pid, Tid);
+                    threadexec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
                     Console.WriteLine(" thread exec options here");
                 }
             }

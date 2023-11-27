@@ -19,7 +19,7 @@ namespace GTInject.memoryOptions
             }
             return IntPtr.Zero;
         }
-        private static IntPtr memopt1(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, IntPtr) memopt1(string binLocation, string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
@@ -40,12 +40,12 @@ namespace GTInject.memoryOptions
             if (writeResp)
             {
                 Console.WriteLine( " Wrote to Mem using VirtAllocEx and WriteProcMem WINAPIs");
-                return vMemAddr;
+                return (vMemAddr, pid);
             }
             else
             {
                 Console.WriteLine(" Failed to write with VirtAllocEx and WriteProcMem WINAPIs");
-                return IntPtr.Zero;
+                return (IntPtr.Zero, IntPtr.Zero);
             }
         }
 
