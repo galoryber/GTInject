@@ -62,21 +62,14 @@ namespace GTInject.GetShellcode
 
         private static byte[] xorfunction(byte[] xorBytes, string xorkey)
         {
-            byte block = 0x00; // init
-            try
+            Console.WriteLine( " Decrypting Byte Array");
+            byte[] decBytes = new byte[xorBytes.Length];
+            char[] secretKey = xorkey.ToCharArray();
+            for (int byteIndex = 0; byteIndex < xorBytes.Length; byteIndex++)
             {
-                block = Byte.Parse(xorkey.Substring(2), NumberStyles.HexNumber);
+                decBytes[byteIndex] = (byte)(xorBytes[byteIndex] ^ secretKey[byteIndex % secretKey.Length]);
             }
-            catch
-            {
-                Console.WriteLine(" xorkey should be defined as 0xAF. Didn't parse correctly, how did you enter it? \n");
-            }
-
-            for (int a = 0; a < xorBytes.Length; a++)
-            {
-                xorBytes[a] = (byte)((uint)xorBytes[a] ^ block);
-            }
-            return xorBytes;
+            return decBytes;
         }
 
     }

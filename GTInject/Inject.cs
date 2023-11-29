@@ -41,7 +41,7 @@ GTInject.exe Help Menu
 
 Usage: GTInject.exe <command> <commandArgs>
        GTInject.exe threads
-       GTInject.exe encrypt pathToSource.bin MyXorKeySecret123
+       GTInject.exe encrypt pathToSource.bin 0xAF
        GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
 
 Encrypt  -- for encrypting shellcode:
@@ -133,7 +133,6 @@ ThreadExec Options
                 else
                 {
                     threadexec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
-                    Console.WriteLine(" thread exec options here");
                 }
             }
  
