@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Globalization;
 using GTInject.memoryOptions;
 using GTInject.Injection;
+using System.Diagnostics;
 
 namespace GTInject
 {
@@ -125,6 +126,8 @@ ThreadExec Options
                 catch (Exception ex) {
                     Console.WriteLine($"Other exception : {ex.Message}");
                 }
+                IntPtr memoryResponse = IntPtr.Zero;
+                Process pidResp = null;
                 (memoryResponse, pidResp) = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
                 if (memoryResponse == IntPtr.Zero) { Console.WriteLine(" And you may ask yourself, 'well, how did I get here?', Leeting the days go by "); }
                 else

@@ -6,7 +6,7 @@ namespace GTInject.memoryOptions
 {
     internal class memory
     {
-        public static IntPtr SelectMemOption(int memoption, int execoption, string xorkey, string binsrctype, string binsrcpath, int pid, int tid)
+        public static (IntPtr, Process) SelectMemOption(int memoption, int execoption, string xorkey, string binsrctype, string binsrcpath, int pid, int tid)
         {
             switch (memoption)
             {
@@ -14,12 +14,12 @@ namespace GTInject.memoryOptions
                     return memopt1(binsrctype, binsrcpath, xorkey, pid);
                     break;
                 case 2:
-                    return IntPtr.Zero;
+                    return (IntPtr.Zero, null);
                     break;
             }
-            return IntPtr.Zero;
+            return (IntPtr.Zero, null);
         }
-        private static (IntPtr, IntPtr) memopt1(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt1(string binLocation, string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
@@ -45,7 +45,7 @@ namespace GTInject.memoryOptions
             else
             {
                 Console.WriteLine(" Failed to write with VirtAllocEx and WriteProcMem WINAPIs");
-                return (IntPtr.Zero, IntPtr.Zero);
+                return (IntPtr.Zero, null);
             }
         }
 

