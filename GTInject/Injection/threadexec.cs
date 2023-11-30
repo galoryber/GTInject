@@ -17,6 +17,8 @@ namespace GTInject.Injection
                     return execopt101(memaddr, pid, tid);
                 case 200:
                     return execopt200(memaddr, pid, tid);
+                case 201:
+                    return execopt201(memaddr, pid, tid);
                 case 4:
                     return IntPtr.Zero;
             }
@@ -90,6 +92,20 @@ namespace GTInject.Injection
             return hRemoteThread;
         }
 
+        private static IntPtr execopt201(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 201 == RtlCreateUserThread (NTAPI)
+            /////////////////////////////////////
+            ///
+
+            IntPtr targetThread = IntPtr.Zero;
+            ClientId id = new ClientId();
+            int hthread = RtlCreateUserThread(ProcID.Handle, IntPtr.Zero, false, 0, IntPtr.Zero, IntPtr.Zero, memaddr, IntPtr.Zero, ref targetThread, ref id);
+
+            return targetThread;
+        }
+
         /////////////////////////////////////
         // Supporting functions
         /////////////////////////////////////
@@ -98,6 +114,13 @@ namespace GTInject.Injection
         /////////////////////////////////////
         // PInvokes and Enums / Structures
         /////////////////////////////////////
+
+        public struct ClientId
+        {
+            public IntPtr processHandle;
+            public IntPtr threadHandle;
+        }
+
         [Flags]
         public enum    ThreadAccess : int
         {
@@ -126,6 +149,9 @@ namespace GTInject.Injection
 
         [DllImport("ntdll.dll", SetLastError = true)]
         public static extern uint NtCreateThreadEx(out IntPtr hThread, uint DesiredAccess, IntPtr ObjectAttributes, IntPtr ProcessHandle, IntPtr lpStartAddress, IntPtr lpParameter, [MarshalAs(UnmanagedType.Bool)] bool CreateSuspended, uint StackZeroBits, uint SizeOfStackCommit, uint SizeOfStackReserve, IntPtr lpBytesBuffer);
+
+        [DllImport("ntdll.dll")]
+        public static extern int RtlCreateUserThread(IntPtr processHandle, IntPtr securityDescriptor, bool createSuspended, uint zeroBits, IntPtr zeroReserve, IntPtr zeroCommit, IntPtr startAddress, IntPtr startParameter, ref IntPtr threadHandle, ref ClientId clientid);
 
 
     }

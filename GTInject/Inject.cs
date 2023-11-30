@@ -39,7 +39,7 @@ namespace GTInject
                 string helptext = @"
 GTInject.exe Help Menu
 
-Usage: GTInject.exe <command> <commandArgs>
+Usage: GTInject.exe <module> <moduleArgs>
        GTInject.exe threads
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
        GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
@@ -73,11 +73,13 @@ Inject   -- choose a process injection method
 Memory Options
         100. WINAPI -- VirtualAllocEx, WriteProcessMemory
         200. NTAPI  -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
+        201. NTAPI  -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
 
 ThreadExec Options
         100. WINAPI -- CreateRemoteThread
         101. WINAPI -- QueueUserAPC & ResumeThread
         200. NTAPI  -- NtCreateThreadEx
+        201. NTAPI  -- RtlCreateUserThread
 ";
                 Console.WriteLine(helptext);
              }
