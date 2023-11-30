@@ -11,21 +11,21 @@ namespace GTInject.memoryOptions
         {
             switch (memoption)
             {
-                case 1:
-                    return memopt1(binsrctype, binsrcpath, xorkey, pid);
-                case 2:
-                    return memopt2(binsrctype, binsrcpath, xorkey, pid);
+                case 100:
+                    return memopt100(binsrctype, binsrcpath, xorkey, pid);
+                case 200:
+                    return memopt200(binsrctype, binsrcpath, xorkey, pid);
                 case 3:
                     return (IntPtr.Zero, null);
             }
             Console.WriteLine(  " [-] Bad memory allocation technique, enter an integer Memory Option selection");
             return (IntPtr.Zero, null);
         }
-        private static (IntPtr, Process) memopt1(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt100(string binLocation, string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
-            // OPTION 1 == VirtualAllocEx && WriteProcessMemory (WINAPI)
+            // OPTION 100 == VirtualAllocEx && WriteProcessMemory (WINAPI)
             /////////////////////////////////////
 
             Console.WriteLine(  "  Allocate memory using WinAPIs - VirtualAllocEx and WriteProcMem");
@@ -53,11 +53,11 @@ namespace GTInject.memoryOptions
         }
 
 
-        private static (IntPtr, Process) memopt2(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt200(string binLocation, string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
-            // OPTION 2 == NtCreateSection, NtMapViewOfSection, RtlCopyMemory (NTAPI)
+            // OPTION 200 == NtCreateSection, NtMapViewOfSection, RtlCopyMemory (NTAPI)
             /////////////////////////////////////
             // https://github.com/tasox/CSharp_Process_Injection/blob/main/04.%20Process_Injection_template_(Low%20Level%20Windows%20API)%20-%20Modify%20Permissions/Program.cs 
             var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);

@@ -44,7 +44,7 @@ Usage: GTInject.exe <command> <commandArgs>
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
        GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
 
-       GTInject.exe inject 1 1 SecretKey123 disk ""C:\path\to\xordShellcode.file\"" 1234 321
+       GTInject.exe inject 100 100 SecretKey123 disk ""C:\path\to\xordShellcode.file\"" 1234 321
 
 Encrypt  -- for encrypting shellcode:
         Shellcode from your C2 will be multibyte XOR'd and written as a base64 string in a text file
@@ -65,14 +65,19 @@ Inject   -- choose a process injection method
         Specify the location
         Specify the PID
 
+100 Series - WINAPI
+200 Series - NTAPI 
+300 Series - Syscalls
+400 Series - Misc Techniques
+
 Memory Options
-        1. WINAPI -- VirtualAllocEx, WriteProcessMemory
-        2. NTAPI  -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
+        100. WINAPI -- VirtualAllocEx, WriteProcessMemory
+        200. NTAPI  -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
 
 ThreadExec Options
-        1. WINAPI -- CreateRemoteThread
-        2. WINAPI -- QueueUserAPC & ResumeThread
-        3. NTAPI  -- NtCreateThreadEx
+        100. WINAPI -- CreateRemoteThread
+        101. WINAPI -- QueueUserAPC & ResumeThread
+        200. NTAPI  -- NtCreateThreadEx
 ";
                 Console.WriteLine(helptext);
              }

