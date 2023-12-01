@@ -1,5 +1,9 @@
 # GTInject
-Build re-usable process injection for multiple C2s. Based off of design of BRC4. 
+**Portable and Modular Process Injection**
+
+Process injection in C2 frameworks are often limited to one or two techniques built by the beacon developer. This tool is designed to offer mix and match memory allocation and thread execution techniques for process injection, with the goal of being portable accross C2 systems. 
+
+It is largely inspired by the flexibility given within Brute Ratel, which made other C2 injection options feel extremely limited. I wanted to recreate that functionality for other C2s that I like using. 
 
 
 
