@@ -123,14 +123,17 @@ namespace GTInject.memoryOptions
 
             // Memory Allocation
             IntPtr NtAllocResult = NtAllocateVirtualMemory(remoteProc.Handle, ref baseAddress, IntPtr.Zero, ref regionSize, (uint)(AllocationType.Commit | AllocationType.Reserve), (uint)(MemoryProtection.ReadWrite));
+            Console.WriteLine(  " NTAlloc resp : " + NtAllocResult);
+            Console.WriteLine(  " NTAlloc address " + baseAddress);
 
             int NtWriteProcess = NtWriteVirtualMemory(remoteProc.Handle, baseAddress, plainBytes, (uint)plainBytes.Length, out uint wr);
-            
+            Console.WriteLine(  " NtWrite resp : " + NtWriteProcess);
+            Console.WriteLine(  " written " + wr);
             uint flOld = 0;
             uint sectionSize = (uint)plainBytes.Length;
-            uint mapSectionModifyPerm = NtProtectVirtualMemory(remoteProc.Handle, ref NtAllocResult, ref sectionSize, (uint)(MemoryProtection.ExecuteRead), ref flOld);
-
-            return (NtAllocResult, remoteProc);
+            uint NtVirtProtResp = NtProtectVirtualMemory(remoteProc.Handle, ref baseAddress, ref sectionSize, (uint)(MemoryProtection.ExecuteRead), ref flOld);
+            Console.WriteLine(  " NtProtect resp : " + NtVirtProtResp);
+            return (baseAddress, remoteProc);
         }
 
         /////////////////////////////////////
