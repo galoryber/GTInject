@@ -77,9 +77,10 @@ Memory Options
 
 ThreadExec Options
         100. WINAPI -- CreateRemoteThread
-        101. WINAPI -- QueueUserAPC & ResumeThread
+        101. WINAPI -- QueueUserAPC, ResumeThread
         200. NTAPI  -- NtCreateThreadEx
         201. NTAPI  -- RtlCreateUserThread
+        202. NTAPI  -- NtQueueApcThread, NtResumeThread
 ";
                 Console.WriteLine(helptext);
              }

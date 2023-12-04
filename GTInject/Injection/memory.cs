@@ -18,7 +18,8 @@ namespace GTInject.memoryOptions
                     return memopt200(binsrctype, binsrcpath, xorkey, pid);
                 case 201:
                     return memopt201(binsrctype, binsrcpath, xorkey, pid);
-                case 3:
+                default:
+                    Console.WriteLine( " not a valid memory allocation option integer");
                     return (IntPtr.Zero, null);
             }
             Console.WriteLine(  " [-] Bad memory allocation technique, enter an integer Memory Option selection");
