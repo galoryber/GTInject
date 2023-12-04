@@ -24,7 +24,7 @@ namespace GTInject.GetShellcode
             var byteSource = Enum.TryParse<Inject.sourceLocation>(binLocation, true, out var enumresult);
             if (!(byteSource))
             {
-                Console.WriteLine(" [-] Bad Location defined, needs to be embedded, url, or disk, then specify the path to that location");
+                Console.WriteLine("[-] Bad Location defined, needs to be embedded, url, or disk, then specify the path to that location");
                 return null;
             }
             else if (binLocation.ToLower() == "disk")
@@ -48,7 +48,7 @@ namespace GTInject.GetShellcode
                 }
                 catch
                 {
-                    Console.WriteLine(" URL wasn't properly defined, should be something like https://example.com/base64AndXordPayload");
+                    Console.WriteLine("[-] URL wasn't properly defined, should be something like https://example.com/base64AndXordPayload");
                     return null;
                 }
 
@@ -62,7 +62,7 @@ namespace GTInject.GetShellcode
 
         private static byte[] xorfunction(byte[] xorBytes, string xorkey)
         {
-            Console.WriteLine( " Decrypting Byte Array");
+            Console.WriteLine("     Decrypting Byte Array");
             byte[] decBytes = new byte[xorBytes.Length];
             char[] secretKey = xorkey.ToCharArray();
             for (int byteIndex = 0; byteIndex < xorBytes.Length; byteIndex++)

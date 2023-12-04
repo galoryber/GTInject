@@ -96,7 +96,7 @@ ThreadExec Options
                 }
                 catch
                 {
-                    Console.WriteLine( " You didn't include the needed arguments for GTInject.exe encrypt <sourceBinPath> <yourXorKeyString>");
+                    Console.WriteLine( "[-] You didn't include the needed arguments for GTInject.exe encrypt <sourceBinPath> <yourXorKeyString>");
                 }
                 EncryptBin.EncryptBin.EncryptShellcode(binPath, xorkey);
             }
@@ -131,17 +131,17 @@ ThreadExec Options
                     }
                     catch (IndexOutOfRangeException ex)
                     {
-                        Console.WriteLine( " Tid not entered as an arg, not an issue at this point, just catch to handle the exception");
+                        Console.WriteLine("     Tid not entered as an arg, not an issue at this point, just catch to handle the exception");
                         //Tid = 0;
                     }
                 }
                 catch (Exception ex) {
-                    Console.WriteLine($"Other exception : {ex.Message}");
+                    Console.WriteLine($"[-] Other exception : {ex.Message}");
                 }
                 IntPtr memoryResponse = IntPtr.Zero;
                 Process pidResp = null;
                 (memoryResponse, pidResp) = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
-                if (memoryResponse == IntPtr.Zero) { Console.WriteLine(" And you may ask yourself, 'well, how did I get here?', Leeting the days go by "); }
+                if (memoryResponse == IntPtr.Zero) { Console.WriteLine("[-] Failed to allocate memory, received and IntPtr 0 instead of a memory address"); }
                 else
                 {
                     threadexec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);

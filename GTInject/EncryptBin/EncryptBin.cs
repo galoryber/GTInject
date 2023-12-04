@@ -77,7 +77,7 @@ namespace GTInject.EncryptBin
             var outputBase64Payload = PrintXordB64ForFile(Xord).ToString();
             File.WriteAllText(outputTextFile, programOutput.ToString());
             File.WriteAllText(b64outputfilename, outputBase64Payload.ToString());
-            Console.WriteLine(" Writing all encrypted data to files in the current directory\n");
+            Console.WriteLine("[+] Writing all encrypted data to files in the current directory\n");
 
             //==============
             //Gzip'd Base64 Xor'd Payload

