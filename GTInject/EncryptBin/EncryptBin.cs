@@ -20,21 +20,6 @@ namespace GTInject.EncryptBin
             programOutput.Append("Bytes size is : " + bytes.Length);
             programOutput.Append(Environment.NewLine);
 
-            //===========
-            //XOR Payload
-            //===========
-            /*byte[] Xord = new byte[bytes.Length];
-            byte[] multibytekey = { 0xAF, 0x37, 0x13 };
-            for (int b = 0; b < multibytekey.Length; b++)
-            {
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    Xord[i] = (byte)((uint)bytes[i] ^ multibytekey[b]);
-                }
-            }*/
-            //Testing multibyte xor key - which should help with storing on disk? 
-
-
             programOutput.Append("absolute path of file to xor is " + binPath);
             programOutput.Append(Environment.NewLine);
             String inputPath = binPath;
@@ -78,41 +63,6 @@ namespace GTInject.EncryptBin
             File.WriteAllText(outputTextFile, programOutput.ToString());
             File.WriteAllText(b64outputfilename, outputBase64Payload.ToString());
             Console.WriteLine("[+] Writing all encrypted data to files in the current directory\n");
-
-            //==============
-            //Gzip'd Base64 Xor'd Payload
-            //==============
-            //Tested before, looks basically the same as base64 as far as length is concerned - maybe for addition obfuscation? 
-
-            // VBA payload should be something else, Posh bin files load teh CLR, which is too large for VBA directly
-            /*uint vbacounter = 0;
-            uint linecounter = 0;
-            StringBuilder printvba = new StringBuilder(bytes.Length * 2);
-            StringBuilder concatvba = new StringBuilder(bytes.Length * 2);
-            foreach (byte b in bytes)
-            {
-                printvba.AppendFormat("{0:X2}", b);
-                vbacounter++;
-                if (vbacounter % 50 == 0)
-                {
-                    printvba.AppendFormat("\"");
-                    linecounter++;
-                    if (linecounter % 15 == 0)
-                    {
-                        printvba.AppendFormat("{0}", Environment.NewLine);
-                        printvba.AppendFormat(" var{0} = \"", vbacounter);
-                        concatvba.AppendFormat(" var{0} &", vbacounter);
-                    }
-                    else
-                    {
-                        printvba.AppendFormat(" & _{0}", Environment.NewLine);
-                        printvba.AppendFormat("\"");
-                    }
-                }
-            }
-            Console.WriteLine("VBA plain Hex: " + printvba.ToString());
-            Console.WriteLine("allcod = var0 &" + concatvba.ToString());
-            */
 
         }
 

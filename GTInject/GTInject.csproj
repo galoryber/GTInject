@@ -51,6 +51,7 @@
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -71,6 +72,9 @@
     <Compile Include="Injection\memory.cs" />
     <Compile Include="Injection\threadexec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SysCalls\Syscalls.cs" />
+    <Compile Include="SysCalls\Sysprogram.cs" />
+    <Compile Include="SysCalls\WinNative.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
