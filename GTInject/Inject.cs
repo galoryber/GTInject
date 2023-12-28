@@ -128,6 +128,7 @@ ThreadExec Options
                     xorkey = args[3];
                     binSrcType = args[4];
                     binSrcPath = args[5];
+                    Console.WriteLine("     Shellcode will be called from {0} located at {1}", binSrcType, binSrcPath);
                     Pid = int.Parse(args[6]);
                     try
                     {
