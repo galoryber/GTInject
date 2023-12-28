@@ -73,16 +73,20 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
 - 400 Series - Misc Techniques
 
 ## Memory Options
-        100. WINAPI -- VirtualAllocEx, WriteProcessMemory
-        200. NTAPI  -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
-        201. NTAPI  -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
+        100. WINAPI  -- VirtualAllocEx, WriteProcessMemory
+        200. NTAPI   -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
+        201. NTAPI   -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
+        300. SysCall -- Direct, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory 
+
 
 ## ThreadExec Options
-        100. WINAPI -- CreateRemoteThread
-        101. WINAPI -- QueueUserAPC, ResumeThread
-        200. NTAPI  -- NtCreateThreadEx
-        201. NTAPI  -- RtlCreateUserThread
-        202. NTAPI  -- NtQueueApcThread, NtResumeThread
+        100. WINAPI  -- CreateRemoteThread
+        101. WINAPI  -- QueueUserAPC, ResumeThread
+        200. NTAPI   -- NtCreateThreadEx
+        201. NTAPI   -- RtlCreateUserThread
+        202. NTAPI   -- NtQueueApcThread, NtResumeThread
+        300. SysCall -- Direct, NtCreateThreadEx
+        301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
 
 # ToDo
 * Obvious add more techniques
