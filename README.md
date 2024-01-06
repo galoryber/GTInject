@@ -78,7 +78,8 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         201. NTAPI   -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         300. SysCall -- Direct, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory 
         301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory 
-
+        302. SysCall -- Indirect, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
+        303. SysCall -- Indirect, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
 
 ## ThreadExec Options
         100. WINAPI  -- CreateRemoteThread
@@ -89,6 +90,7 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
         302. SysCall -- Indirect, NtCreateThreadEx
+        303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread
 
 # ToDo
 - Obvious, add more techniques
