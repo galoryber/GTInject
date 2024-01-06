@@ -76,6 +76,8 @@ Memory Options
         201. NTAPI   -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         300. SysCall -- Direct, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory 
         301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
+        302. SysCall -- Indirect, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
+        303. SysCall -- Indirect, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
 
 ThreadExec Options
         100. WINAPI  -- CreateRemoteThread

