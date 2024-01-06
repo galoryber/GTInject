@@ -88,7 +88,7 @@ ThreadExec Options
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
         302. SysCall -- Indirect, NtCreateThreadEx
-
+        303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread
 ";
                 Console.WriteLine(helptext);
              }

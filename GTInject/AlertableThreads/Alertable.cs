@@ -77,3 +77,8 @@ namespace GTInject.AlertableThreads
     [Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process);
     }
 }
+
+//https://devblogs.microsoft.com/oldnewthing/20221017-00/?p=107291 
+// possible info on getting integrity levels
+//https://learn.microsoft.com/en-us/previous-versions/dotnet/articles/bb625963(v=msdn.10)#uiaccess-for-ui-automation-applications%20%20TITLE=
+//correspondign values for integrity levels

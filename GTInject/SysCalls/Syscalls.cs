@@ -534,6 +534,81 @@ namespace GTInject.SysCalls
         }
 
 
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtQueueApcThread(IntPtr ThreadHandle, IntPtr ApcRoutine, UInt32 ApcRoutineContext, IntPtr ApcStatusBlock, Int32 ApcReserved)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtQueueApcThread");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtQueueApcThread assembledFunction = (Delegates.DelgNtQueueApcThread)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtQueueApcThread));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(ThreadHandle, ApcRoutine, ApcRoutineContext, ApcStatusBlock, ApcReserved);
+                }
+            }
+        }
+
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtResumeThread(IntPtr hThread, uint dwSuspendCount)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtResumeThread");
+
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtResumeThread assembledFunction = (Delegates.DelgNtResumeThread)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtResumeThread));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(hThread, dwSuspendCount);
+                }
+            }
+        }
+
+
 
         ////////////////////////////
         // Other Functions
