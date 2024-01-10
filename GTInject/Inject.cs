@@ -7,6 +7,7 @@ using System.Globalization;
 using GTInject.memoryOptions;
 using GTInject.Injection;
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
 
 namespace GTInject
 {
@@ -111,7 +112,16 @@ ThreadExec Options
 
             else if (command.ToLower() == "threads")
             {
-                AlertableThreads.Alertable.GetThreads();
+                bool filterUntrusted = true; // by default, remove untrusted / Low integrity processes from view - Things like AppContainer aren't often worth reviewing
+                try
+                {
+                    filterUntrusted = bool.Parse(args[1]);
+                }
+                catch
+                {
+                    Console.WriteLine("     Won't show Untrusted or Low integrity process, use GTInject.exe threads false to turn off filtering");
+                }
+                AlertableThreads.Alertable.GetThreads(filterUntrusted);
             }
 
             else if (command.ToLower() == "inject")
