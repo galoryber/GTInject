@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Management;
@@ -301,3 +298,4 @@ namespace GTInject.AlertableThreads
 // possible info on getting integrity levels
 //https://learn.microsoft.com/en-us/previous-versions/dotnet/articles/bb625963(v=msdn.10)#uiaccess-for-ui-automation-applications%20%20TITLE=
 //correspondign values for integrity levels
+// Easier, reuse other peoples genius -- https://github.com/gh0x0st/wanderer/blob/main/wanderer/wanderer/Program.cs
