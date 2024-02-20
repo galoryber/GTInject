@@ -66,9 +66,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlertableThreads\Alertable.cs" />
-    <Compile Include="EncryptBin\EncryptBin.cs" />
-    <Compile Include="GetShellcode\GetShellcode.cs" />
+    <Compile Include="Util\Alertable.cs" />
+    <Compile Include="Util\EncryptBin.cs" />
+    <Compile Include="Util\GetShellcode.cs" />
     <Compile Include="Inject.cs" />
     <Compile Include="Injection\memory.cs" />
     <Compile Include="Injection\threadexec.cs" />
@@ -78,6 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Novel\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

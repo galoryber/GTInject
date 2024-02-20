@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Xml.Linq;
 using GTInject.SysCalls;
 using System.Linq.Expressions;
+using static GTInject.SysCalls.WinNative;
 
 namespace GTInject.Injection
 {
@@ -377,134 +378,6 @@ namespace GTInject.Injection
 
         }
 
-
-
-        /////////////////////////////////////
-        // Supporting functions
-        /////////////////////////////////////
-
-
-        /////////////////////////////////////
-        // PInvokes and Enums / Structures
-        /////////////////////////////////////
-        [StructLayout(LayoutKind.Sequential)]
-        public struct ClientId
-        {
-            public IntPtr processHandle;
-            public IntPtr threadHandle;
-        }
-        public struct OBJECT_ATTRIBUTES
-        {
-            public ulong Length;
-            public IntPtr RootDirectory;
-            public IntPtr ObjectName;
-            public ulong Attributes;
-            public IntPtr SecurityDescriptor;
-            public IntPtr SecurityQualityOfService;
-        }
-
-        [Flags]
-        public enum    ThreadAccess : int
-        {
-            TERMINATE           = (0x0001)  ,
-            SUSPEND_RESUME      = (0x0002)  ,
-            GET_CONTEXT         = (0x0008)  ,
-            SET_CONTEXT         = (0x0010)  ,
-            SET_INFORMATION     = (0x0020)  ,
-            QUERY_INFORMATION       = (0x0040)  ,
-            SET_THREAD_TOKEN    = (0x0080)  ,
-            IMPERSONATE         = (0x0100)  ,
-            DIRECT_IMPERSONATION    = (0x0200)
-        }
-
-        public enum ThreadAccessRights : uint
-        {
-            Terminate = 0x0001,
-            SuspendResume = 0x0002,
-            Alert = 0x0004,
-            GetContext = 0x0008,
-            SetContext = 0x0010,
-            SetInformation = 0x0020,
-            QueryInformation = 0x0040,
-            SetThreadToken = 0x0080,
-            Impersonate = 0x0100,
-            DirectImpersonation = 0x0200,
-            SetLimitedInformation = 0x0400,
-            QueryLimitedInformation = 0x0800,
-            AllAccess = 0x1FFFFF,
-            GenericRead = GenericAccessRights.GenericRead,
-            GenericWrite = GenericAccessRights.GenericWrite,
-            GenericExecute = GenericAccessRights.GenericExecute,
-            GenericAll = GenericAccessRights.GenericAll,
-            Delete = GenericAccessRights.Delete,
-            ReadControl = GenericAccessRights.ReadControl,
-            WriteDac = GenericAccessRights.WriteDac,
-            WriteOwner = GenericAccessRights.WriteOwner,
-            Synchronize = GenericAccessRights.Synchronize,
-            MaximumAllowed = GenericAccessRights.MaximumAllowed,
-            AccessSystemSecurity = GenericAccessRights.AccessSystemSecurity
-        }
-
-        public enum GenericAccessRights : uint
-        {
-            None = 0,
-            Access0 = 0x00000001,
-            Access1 = 0x00000002,
-            Access2 = 0x00000004,
-            Access3 = 0x00000008,
-            Access4 = 0x00000010,
-            Access5 = 0x00000020,
-            Access6 = 0x00000040,
-            Access7 = 0x00000080,
-            Access8 = 0x00000100,
-            Access9 = 0x00000200,
-            Access10 = 0x00000400,
-            Access11 = 0x00000800,
-            Access12 = 0x00001000,
-            Access13 = 0x00002000,
-            Access14 = 0x00004000,
-            Access15 = 0x00008000,
-            Delete = 0x00010000,
-            ReadControl = 0x00020000,
-            WriteDac = 0x00040000,
-            WriteOwner = 0x00080000,
-            Synchronize = 0x00100000,
-            AccessSystemSecurity = 0x01000000,
-            MaximumAllowed = 0x02000000,
-            GenericAll = 0x10000000,
-            GenericExecute = 0x20000000,
-            GenericWrite = 0x40000000,
-            GenericRead = 0x80000000,
-        }
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern IntPtr OpenThread(uint desiredAccess, bool inheritHandle, uint threadId);
-
-        [DllImport("kernel32.dll")]
-        public static extern uint QueueUserAPC(IntPtr pfnAPC, IntPtr hThread, IntPtr dwData);
-
-        [DllImport("kernel32.dll")]
-        public static extern int ResumeThread(IntPtr hThread);
-
-        [DllImport("ntdll.dll", SetLastError = true)]
-        public static extern uint NtCreateThreadEx(out IntPtr hThread, uint DesiredAccess, IntPtr ObjectAttributes, IntPtr ProcessHandle, IntPtr lpStartAddress, IntPtr lpParameter, [MarshalAs(UnmanagedType.Bool)] bool CreateSuspended, uint StackZeroBits, uint SizeOfStackCommit, uint SizeOfStackReserve, IntPtr lpBytesBuffer);
-
-        [DllImport("ntdll.dll")]
-        public static extern int RtlCreateUserThread(IntPtr processHandle, IntPtr securityDescriptor, bool createSuspended, uint zeroBits, IntPtr zeroReserve, IntPtr zeroCommit, IntPtr startAddress, IntPtr startParameter, ref IntPtr threadHandle, ref ClientId clientid);
-
-        [DllImport("ntdll.dll")]
-        public static extern int NtOpenThread(out IntPtr hThread, uint DesiredAccess, ref OBJECT_ATTRIBUTES ObjectAttributes, ref ClientId cId );
-
-        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern NTSTATUS NtQueueApcThread(IntPtr ThreadHandle, IntPtr ApcRoutine, UInt32 ApcRoutineContext, IntPtr ApcStatusBlock, Int32 ApcReserved);
-
-        [DllImport("ntdll.dll", SetLastError = true)]
-        public static extern NTSTATUS NtResumeThread(IntPtr hThread, uint dwSuspendCount);
-
-        //https://www.csharpcodi.com/vs2/2027/sandbox-attacksurface-analysis-tools/NtApiDotNet/NtThread.cs/
 
     }
 }

@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Management;
 using Microsoft.Win32.SafeHandles;
 using System.ComponentModel;
+using static GTInject.SysCalls.WinNative;
 
 namespace GTInject.AlertableThreads
 {
@@ -78,60 +79,6 @@ namespace GTInject.AlertableThreads
 
         return "NO OWNER";
     }
-
-    [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsWow64Process([In] IntPtr processHandle,
-    [Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process);
-
-
-
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct SID_AND_ATTRIBUTES
-        {
-            public IntPtr Sid;
-            public Int32 Attributes;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct TOKEN_MANDATORY_LABEL
-        {
-            public SID_AND_ATTRIBUTES Label;
-        }
-
-        public enum TOKEN_INFORMATION_CLASS
-        {
-            TokenUser = 1,
-            TokenGroups,
-            TokenPrivileges,
-            TokenOwner,
-            TokenPrimaryGroup,
-            TokenDefaultDacl,
-            TokenSource,
-            TokenType,
-            TokenImpersonationLevel,
-            TokenStatistics,
-            TokenRestrictedSids,
-            TokenSessionId,
-            TokenGroupsAndPrivileges,
-            TokenSessionReference,
-            TokenSandBoxInert,
-            TokenAuditPolicy,
-            TokenOrigin,
-            TokenElevationType,
-            TokenLinkedToken,
-            TokenElevation,
-            TokenHasRestrictions,
-            TokenAccessInformation,
-            TokenVirtualizationAllowed,
-            TokenVirtualizationEnabled,
-            TokenIntegrityLevel,
-            TokenUIAccess,
-            TokenMandatoryPolicy,
-            TokenLogonSid,
-            MaxTokenInfoClass
-        }
 
 
         public class SafeTokenHandle : SafeHandleZeroOrMinusOneIsInvalid
