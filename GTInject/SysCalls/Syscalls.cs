@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using static GTInject.memoryOptions.memory;
+using static GTInject.memoryOptions.Memory;
 
 namespace GTInject.SysCalls
 {

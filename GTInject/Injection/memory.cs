@@ -9,7 +9,7 @@ using static GTInject.SysCalls.WinNative;
 
 namespace GTInject.memoryOptions
 {
-    internal class memory
+    internal class Memory
     {
         public static (IntPtr, Process) SelectMemOption(int memoption, int execoption, string xorkey, string binsrctype, string binsrcpath, int pid, int tid)
         {

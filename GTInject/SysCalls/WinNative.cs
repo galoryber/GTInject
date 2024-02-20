@@ -646,6 +646,39 @@ namespace GTInject.SysCalls
             MaxTokenInfoClass
         }
 
+        [DllImport("ntdll.dll")]
+        public static extern NTSTATUS NtReadVirtualMemory(
+    IntPtr processHandle,
+    IntPtr baseAddress,
+    IntPtr buffer,
+    uint bytesToRead,
+    ref uint bytesRead);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObj);
+
+        [DllImport("ntdll.dll")]
+        public static extern NTSTATUS NtFreeVirtualMemory(
+    IntPtr processHandle,
+    ref IntPtr baseAddress,
+    ref UIntPtr regionSize,
+    AllocationType freeType);
+
+
+        [DllImport("ntdll.dll")]
+        public static extern void RtlInitUnicodeString(
+    ref UNICODE_STRING destinationString,
+    [MarshalAs(UnmanagedType.LPWStr)] string sourceString);
+
+        [DllImport("ntdll.dll")]
+        public static extern NTSTATUS LdrLoadDll(
+    IntPtr filePath,
+    uint dwFlags,
+    ref UNICODE_STRING moduleFileName,
+
+    ref IntPtr moduleHandle);
+
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWow64Process([In] IntPtr processHandle,

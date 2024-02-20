@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
-using static GTInject.memoryOptions.memory;
+using static GTInject.memoryOptions.Memory;
 using System.Net.Http;
 using System.Xml.Linq;
 using GTInject.SysCalls;
@@ -12,7 +12,7 @@ using static GTInject.SysCalls.WinNative;
 
 namespace GTInject.Injection
 {
-    internal class threadexec
+    internal class ThreadExec
     {
         public static IntPtr SelectThreadOption(IntPtr memaddr, int execoption, Process pid, int tid)
         {

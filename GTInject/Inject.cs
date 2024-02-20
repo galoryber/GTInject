@@ -8,6 +8,7 @@ using GTInject.memoryOptions;
 using GTInject.Injection;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
+using GTInject.Novel;
 
 namespace GTInject
 {
@@ -161,17 +162,41 @@ ThreadExec Options
                 }
                 IntPtr memoryResponse = IntPtr.Zero;
                 Process pidResp = null;
+
+                //Check if Novel methods are chosen 
+                //
                 if (memOption >= 400 && memOption <= 499 || execOption >= 400 && execOption <= 499)
                 {
                     // Special method, might not be following the standard 3 primitives for remote process injection
+                    // Novel methods may be mutually exclusive. We won't be able to combine EX: We can't use MockingJay memoption with Threadless Inject Exec options
                     Console.WriteLine("     Novel injection method selected");
+                    if (memOption >= 400 && memOption <= 499)
+                    {
+                        (memoryResponse, pidResp) = Novel.Novel.SelectNovelMemOption(memOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                        if (memoryResponse != IntPtr.Zero || pidResp != null)
+                        {
+                            // Non null responses from the Novel Mem Options, indicates that it will honor traditional Thread Execution options
+                            var resp = ThreadExec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
+                            return;
+                        }
+                        
+                    }
+
+                    // In the right circumstance, you could technically inject twice doing this, once in a valid memoption, and again here. 
+                    if (execOption >= 400 && execOption <= 499)
+                    {
+                        // A.T.M. novel thread executions don't honor any mem exec options, so we don't care... yet. 
+                        Novel.Novel.SelectNovelExecOption(execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+
+                    }
+                    return;
                 }
-                (memoryResponse, pidResp) = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                (memoryResponse, pidResp) = Memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
                 if (memoryResponse == IntPtr.Zero) { Console.WriteLine("[-] Failed to allocate memory, received and IntPtr 0 instead of a memory address"); }
                 else
                 {
                     System.Threading.Thread.Sleep(5000); // Play with the idea of a configurable delay between operations
-                    threadexec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
+                    ThreadExec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
                     return;
                 }
             }
