@@ -38,7 +38,7 @@ It will show processes you have access to, and any threads in the following stat
 - Suspended
 - Delay Execution
 
-
+Optionally run `GTInject.exe threads false` to see unfiltered results. By default, shows Medium integrity processes. 
 
 ## Inject   -- choose a process injection method
 
@@ -97,11 +97,5 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
   - for each technique, build in as many call categories as possible
 - Build 400 series logic : *novel injection methods*
   - 400 series breaks the 3 primitives - determine flow and if additional modules are needed
-- In the Alertable Threads function - bring in integrity 
-  - filter based on AppContainers - have option to show all anyway
 - Better ReadMe
   - usage video
-- Add Sleep / Delay function
-  - determine where delay should happen ... set to a static value 30 seconds, sleep between memory allocation and thread execution? or between each API call? 
-  - add Jitter/multiplier? so user selects 10 seconds, 3x and it will wait at least 10 seconds, and up to 30 seconds between execution?
-  - worth the extra arguments?
