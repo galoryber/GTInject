@@ -505,23 +505,25 @@ namespace GTInject.SysCalls
 
         }
 
-        [Flags] // Don't need this yet, but saw it and decided to borrow it. 
-        public enum ProcessAccessFlags : uint
+        [Flags]
+        public enum ProcessAccess : uint
         {
-            All = 0x001F0FFF,
             None = 0,
-            Terminate = 0x00000001,
-            CreateThread = 0x00000002,
-            VirtualMemoryOperation = 0x00000008,
-            VirtualMemoryRead = 0x00000010,
-            VirtualMemoryWrite = 0x00000020,
-            DuplicateHandle = 0x00000040,
-            CreateProcess = 0x000000080,
-            SetQuota = 0x00000100,
-            SetInformation = 0x00000200,
-            QueryInformation = 0x00000400,
-            QueryLimitedInformation = 0x00001000,
-            Synchronize = 0x00100000
+            Terminate = 0x0001,
+            CreateThread = 0x0002,
+            SetSessionId = 0x0004,
+            VmOperation = 0x0008,
+            VmRead = 0x0010,
+            VmWrite = 0x0020,
+            DupHandle = 0x0040,
+            CreateProcess = 0x0080,
+            SetQuota = 0x0100,
+            SetInformation = 0x0200,
+            QueryInformation = 0x0400,
+            SuspendResume = 0x0800,
+            QueryLimitedInformation = 0x1000,
+            SetLimitedInformation = 0x2000,
+            AllAccess = 0x1FFFFF
         }
 
         public enum GenericAccessRights : uint
