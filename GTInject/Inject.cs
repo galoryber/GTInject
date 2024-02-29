@@ -91,6 +91,9 @@ ThreadExec Options
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
         302. SysCall -- Indirect, NtCreateThreadEx
         303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread
+        400. Novel   -- ThreadlessInject, CreateEventW - does not honor memory option
+        401. Novel   -- ThreadlessInject, LoadLibraryExW - does not honor memory option
+
 ";
                 Console.WriteLine(helptext);
              }
