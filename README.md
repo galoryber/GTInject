@@ -101,3 +101,7 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
   - 400 series breaks the 3 primitives - determine flow and if additional modules are needed
 - Better ReadMe
   - usage video
+- Rewrite Source location for shellcode
+  - No reason to ask user for disk, url, or embedded.
+  - Just parse thier string to determine if it's a url, disk location, or the keyword 'embedded'
+  - result is one less flag to enter while running
