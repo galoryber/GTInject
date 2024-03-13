@@ -59,6 +59,7 @@ namespace GTInject.AlertableThreads
                 }
 
             }
+            return;
         }
         public static string GetProcessOwner(int processId)
         {

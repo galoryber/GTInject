@@ -126,6 +126,7 @@ ThreadExec Options
                     Console.WriteLine("     Won't show Untrusted or Low integrity process, use GTInject.exe threads false to turn off filtering");
                 }
                 AlertableThreads.Alertable.GetThreads(filterUntrusted);
+                return;
             }
 
             else if (command.ToLower() == "inject")
