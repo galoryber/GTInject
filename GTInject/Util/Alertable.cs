@@ -11,7 +11,224 @@ namespace GTInject.AlertableThreads
 {
     internal class Alertable
     {
-        public static void GetThreads(bool filterUntrusted)
+        // Would like to rewrite
+        // gtinject.exe threads <all or alertable> <optional PID?>
+        // This removes the 'show low integrity' option, but that was an option that didn't give me anything necessary, so I don't think I care. 
+        public static void GetThreads(string threadsToReturn, int optionalPID) 
+        {
+            if (optionalPID == 0 && threadsToReturn.ToLower() == "alertable")
+            {
+                GetAllAlertableThreads();
+            }
+            else if ( optionalPID != 0 && threadsToReturn.ToLower() == "alertable")
+            {
+                GetProcessAlertableThreads(optionalPID);
+            }
+            else if (optionalPID == 0 && threadsToReturn.ToLower() == "all")
+            {
+                GetAllThreads();
+            }
+            else if (optionalPID != 0 && threadsToReturn.ToLower() == "all")
+            {
+                GetProcessAllThreads(optionalPID);
+            }
+
+
+        }
+
+        private static void GetProcessAllThreads(int pid)
+        {
+            var ProcessID = Process.GetProcessById(pid);
+            StringBuilder ProcNThread = new StringBuilder();
+            var procArch = "x64";
+            bool is32 = false;
+            try
+            {
+                IsWow64Process(ProcessID.Handle, out is32);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(" No access to process as current user, can't interact with it");
+            }
+            if (is32) { procArch = "x86"; }
+            var procIntegrity = GetProcessIntegrityLevel(ProcessID.Id);
+            if (procIntegrity == "Untrusted" || procIntegrity == "Low")
+            {
+                Console.WriteLine("   Process integrity is too low, we don't think it will be reliable");
+            }
+
+            string procUser = GetProcessOwner(ProcessID.Id);
+            ProcNThread.AppendFormat("[+] Process: {0,-6} | {1,-3} | {2,-18} | {3, -10} | {4,-35}", ProcessID.Id, procArch, procUser, procIntegrity, ProcessID.ProcessName);
+            ProcNThread.Append(Environment.NewLine);
+
+            var allThreads = ProcessID.Threads;
+            for (int varThread = 0; varThread < allThreads.Count; varThread++)
+            {
+                    ProcNThread.AppendFormat("        Thread: {0,-6}->{1,-15}", allThreads[varThread].Id, allThreads[varThread].WaitReason);
+                    ProcNThread.Append(Environment.NewLine);
+            }
+                Console.WriteLine(ProcNThread);
+        }
+
+        private static void GetAllThreads()
+        {
+            Process[] allProcs = Process.GetProcesses();
+            for (int varProc = 0; varProc < allProcs.Length; varProc++)
+            {
+                StringBuilder ProcNThread = new StringBuilder();
+                bool ThreadMatch = false;
+                var procArch = "x64";
+                bool is32 = false;
+                try
+                {
+                    IsWow64Process(allProcs[varProc].Handle, out is32);
+                }
+                catch (Exception)
+                {
+                    continue; // no access to process as current user, can't interact with it
+                }
+                if (is32) { procArch = "x86"; }
+                var procIntegrity = GetProcessIntegrityLevel(allProcs[varProc].Id);
+                ///if (filterUntrusted) //no filter anymore, but left this here to help me remember where to do it, in case I want to add it back for some reason
+                //{
+                if (procIntegrity == "Untrusted" || procIntegrity == "Low")
+                {
+                    Console.WriteLine("[!] Integrity level is too low, we don't trust reliable access for injection in this process");  //continue; //Don't display Untrusted integrity levels, this contains things like AppContainer integrity levels which are mostly unusable
+                }
+                //}
+
+                string procUser = GetProcessOwner(allProcs[varProc].Id);
+                ProcNThread.AppendFormat("[+] Process: {0,-6} | {1,-3} | {2,-18} | {3, -10} | {4,-35}", allProcs[varProc].Id, procArch, procUser, procIntegrity, allProcs[varProc].ProcessName);
+                ProcNThread.Append(Environment.NewLine);
+
+                var allThreads = allProcs[varProc].Threads;
+                for (int varThread = 0; varThread < allThreads.Count; varThread++)
+                {
+                    //if ((allThreads[varThread].ThreadState.ToString() == "Wait") && ((allThreads[varThread].WaitReason.ToString() == "Suspended") || (allThreads[varThread].WaitReason.ToString() == "ExecutionDelay")))
+                    //{
+                    //ThreadMatch = true;
+                    try
+                    {
+                        ProcNThread.AppendFormat("        Thread: {0,-6}->{1,-15}", allThreads[varThread].Id, allThreads[varThread].WaitReason);
+                    }
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("WaitReason is only available if the ThreadState is Wait"))
+                    {
+                        //ProcNThread.AppendFormat("        Caught Exception in Wait State for next entry\n");
+                        ProcNThread.AppendFormat("        Thread: {0,-6}->{1,-15}", allThreads[varThread].Id, "Caught Exception, Wait State probably changed"); 
+                    }
+
+                    ProcNThread.Append(Environment.NewLine);
+                    //}
+                }
+                //if (ThreadMatch)
+                //{
+                    Console.WriteLine(ProcNThread);
+                    ThreadMatch = false;
+                //}
+
+            }
+        }
+
+        private static void GetProcessAlertableThreads(int pid)
+        {
+            var ProcessID = Process.GetProcessById(pid);
+            StringBuilder ProcNThread = new StringBuilder();
+            bool ThreadMatch = false;
+            var procArch = "x64";
+            bool is32 = false;
+            try
+            {
+                IsWow64Process(ProcessID.Handle, out is32);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(" No access to process as current user, can't interact with it");
+            }
+            if (is32) { procArch = "x86"; }
+            var procIntegrity = GetProcessIntegrityLevel(ProcessID.Id);
+            ///if (filterUntrusted) //no filter anymore, but left this here to help me remember where to do it, in case I want to add it back for some reason
+            //{
+            if (procIntegrity == "Untrusted" || procIntegrity == "Low")
+            {
+                Console.WriteLine(" Process integrity is too low, we don't think it will be reliable");
+                //continue; //Don't display Untrusted integrity levels, this contains things like AppContainer integrity levels which are mostly unusable
+            }
+            //}
+
+            string procUser = GetProcessOwner(ProcessID.Id);
+            ProcNThread.AppendFormat("[+] Process: {0,-6} | {1,-3} | {2,-18} | {3, -10} | {4,-35}", ProcessID.Id, procArch, procUser, procIntegrity, ProcessID.ProcessName);
+            ProcNThread.Append(Environment.NewLine);
+
+            var allThreads = ProcessID.Threads;
+            for (int varThread = 0; varThread < allThreads.Count; varThread++)
+            {
+                if ((allThreads[varThread].ThreadState.ToString() == "Wait") && ((allThreads[varThread].WaitReason.ToString() == "Suspended") || (allThreads[varThread].WaitReason.ToString() == "ExecutionDelay")))
+                {
+                    ThreadMatch = true;
+                    ProcNThread.AppendFormat("        Thread: {0,-6}->{1,-15}", allThreads[varThread].Id, allThreads[varThread].WaitReason);
+                    ProcNThread.Append(Environment.NewLine);
+                }
+            }
+            if (ThreadMatch)
+            {
+                Console.WriteLine(ProcNThread);
+                ThreadMatch = false;
+            }
+        }
+
+        private static void GetAllAlertableThreads()
+        {
+            Process[] allProcs = Process.GetProcesses();
+            for (int varProc = 0; varProc < allProcs.Length; varProc++)
+            {
+                StringBuilder ProcNThread = new StringBuilder();
+                bool ThreadMatch = false;
+                var procArch = "x64";
+                bool is32 = false;
+                try
+                {
+                    IsWow64Process(allProcs[varProc].Handle, out is32);
+                }
+                catch (Exception)
+                {
+                    continue; // no access to process as current user, can't interact with it
+                }
+                if (is32) { procArch = "x86"; }
+                var procIntegrity = GetProcessIntegrityLevel(allProcs[varProc].Id);
+                ///if (filterUntrusted) //no filter anymore, but left this here to help me remember where to do it, in case I want to add it back for some reason
+                //{
+                if (procIntegrity == "Untrusted" || procIntegrity == "Low")
+                {
+                    // To noisy, no current benefit
+                    //Console.WriteLine("[!] "+ allProcs[varProc].ProcessName + " " + allProcs[varProc].Id +  " Integrity level is too low, we don't trust reliable access for injection in this process\n");  //continue; //Don't display Untrusted integrity levels, this contains things like AppContainer integrity levels which are mostly unusable
+                    continue;
+                }
+                //}
+
+                string procUser = GetProcessOwner(allProcs[varProc].Id);
+                ProcNThread.AppendFormat("[+] Process: {0,-6} | {1,-3} | {2,-18} | {3, -10} | {4,-35}", allProcs[varProc].Id, procArch, procUser, procIntegrity, allProcs[varProc].ProcessName);
+                ProcNThread.Append(Environment.NewLine);
+
+                var allThreads = allProcs[varProc].Threads;
+                for (int varThread = 0; varThread < allThreads.Count; varThread++)
+                {
+                    if ((allThreads[varThread].ThreadState.ToString() == "Wait") && ((allThreads[varThread].WaitReason.ToString() == "Suspended") || (allThreads[varThread].WaitReason.ToString() == "ExecutionDelay")))
+                    {
+                        ThreadMatch = true;
+                        ProcNThread.AppendFormat("        Thread: {0,-6}->{1,-15}", allThreads[varThread].Id, allThreads[varThread].WaitReason);
+                        ProcNThread.Append(Environment.NewLine);
+                    }
+                }
+                if (ThreadMatch)
+                {
+                    Console.WriteLine(ProcNThread);
+                    ThreadMatch = false;
+                }
+
+            }
+        }
+
+        public static void GetThreadsOld(bool filterUntrusted)
         {
             Process[] allProcs = Process.GetProcesses();
             for (int varProc = 0; varProc<allProcs.Length; varProc++)

@@ -487,7 +487,7 @@ namespace GTInject.SysCalls
             public ushort Length;
             public ushort MaximumLength;
             public IntPtr Buffer;
-
+            
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 0)]
@@ -713,7 +713,7 @@ namespace GTInject.SysCalls
         public static extern int RtlCreateUserThread(IntPtr processHandle, IntPtr securityDescriptor, bool createSuspended, uint zeroBits, IntPtr zeroReserve, IntPtr zeroCommit, IntPtr startAddress, IntPtr startParameter, ref IntPtr threadHandle, ref ClientId clientid);
 
         [DllImport("ntdll.dll")]
-        public static extern int NtOpenThread(out IntPtr hThread, uint DesiredAccess, ref OBJECT_ATTRIBUTES ObjectAttributes, ref ClientId cId);
+        public static extern int NtOpenThread(out IntPtr hThread, uint DesiredAccess, ref OBJECT_ATTRIBUTES ObjectAttributes, ref CLIENT_ID cId);
 
         [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern NTSTATUS NtQueueApcThread(IntPtr ThreadHandle, IntPtr ApcRoutine, UInt32 ApcRoutineContext, IntPtr ApcStatusBlock, Int32 ApcReserved);

