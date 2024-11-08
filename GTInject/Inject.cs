@@ -36,6 +36,7 @@ namespace GTInject
             if (!(enumcommandparse))
             {
                 Console.WriteLine("Not a valid command, try GTInject.exe help\n");
+                return;
             }
             else if (command.ToLower() == "help") 
             {
@@ -99,6 +100,7 @@ ThreadExec Options
         200. NTAPI   -- NtCreateThreadEx
         201. NTAPI   -- RtlCreateUserThread
         202. NTAPI   -- NtQueueApcThread, NtResumeThread - Must Specify Thread ID
+        203. NTAPI   -- NtGetContextThread, NtSetContextThread - Thread ID Optional
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         302. SysCall -- Indirect, NtCreateThreadEx
@@ -122,6 +124,7 @@ ThreadExec Options
                 catch
                 {
                     Console.WriteLine( "[-] You didn't include the needed arguments for GTInject.exe encrypt <sourceBinPath> <yourXorKeyString>");
+                    return;
                 }
                 EncryptBin.EncryptBin.EncryptShellcode(binPath, xorkey);
             }

@@ -875,5 +875,16 @@ namespace GTInject.SysCalls
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetThreadContext(IntPtr hThread, ref CONTEXT64 lpContext);
 
+        [DllImport("ntdll.dll")]
+        public static extern uint NtSuspendThread(IntPtr hThread, out ulong PrevSuspendCount);
+
+        [DllImport("ntdll.dll")]
+        public static extern uint NtGetContextThread(IntPtr hThread, ref CONTEXT64 lpContext);
+
+        [DllImport("ntdll.dll")]
+        public static extern uint NtSetContextThread(IntPtr hThread, ref CONTEXT64 lpContext);
+
+
+
     }
 }
