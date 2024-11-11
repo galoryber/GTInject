@@ -105,6 +105,8 @@ ThreadExec Options
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         302. SysCall -- Indirect, NtCreateThreadEx
         303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
+        304. Syscall -- Direct, NtGetContextThread, NtSetContextThread - Thread ID Optional
+        305. Syscall -- Indirect, NtGetContextThread, NtSetContextThread - Thread ID Optional
         400. Novel   -- ThreadlessInject, CreateEventW - does not honor memory option
         401. Novel   -- ThreadlessInject, LoadLibraryExW - does not honor memory option
 
@@ -138,7 +140,7 @@ ThreadExec Options
                 {
                     threadsToReturn = args[1];
                 }
-                catch  (IndexOutOfRangeException ex)
+                catch  (IndexOutOfRangeException)
                 {
                     Console.WriteLine("Returning Alertable Threads");
                 }
@@ -147,7 +149,7 @@ ThreadExec Options
                 {
                     optionalPidForThreads = int.Parse(args[2]);
                 }
-                catch (IndexOutOfRangeException ex)
+                catch (IndexOutOfRangeException)
                 {
                     Console.WriteLine(" Optional PID not specified, assuming all processes\n"); // Default is all Processes 
                 }
@@ -168,7 +170,7 @@ ThreadExec Options
                 string binSrcPath = "";
                 int Pid = 0;
                 int Tid = 0;
-                int resultvar = 0;
+                //int resultvar = 0;
                 try
                 {
                     memOption = int.Parse(args[1]); //Int.TryParse(args[1]);
@@ -183,7 +185,7 @@ ThreadExec Options
                     {
                         Tid = int.Parse(args[7]);
                     }
-                    catch (IndexOutOfRangeException ex)
+                    catch (IndexOutOfRangeException)
                     {
                         Console.WriteLine("     Tid not entered as an arg, not an issue at this point, just catch to handle the exception");
                         //Tid = 0;
