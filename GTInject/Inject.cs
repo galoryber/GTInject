@@ -50,6 +50,7 @@ Usage: GTInject.exe <module> <moduleArgs>
 
 Modules: 
     Encrypt
+    Create
     Threads
     Inject
 
@@ -61,8 +62,15 @@ Encrypt:
 
         Do this in preparation, not on the C2 victim machine.
 
+Create:
+        -- GTInject.exe create <process||thread||sleepThread> <ProcessPath||PID>
+        Used to create new processes or threads in Suspended states, or things like Early Bird injection or QueueUserAPC injection or Process Hollowing
+        create process C:\Windows\System32\netsh.exe -- this would launch netsh.exe in a suspended state, use the inject module later
+        create thread 12345 -- this would create a new suspended thread in an existing Process ID
+        create sleepthread 12345 -- this would create a new thread in a DelayExecution wait state (by calling kernel32!Sleep in the newly created thread)
+
 Threads:
-        -- GTInject.exe threads alertable 10234 --
+                --GTInject.exe threads alertable 10234 --
         Specify 'alertable' or 'all' threads
         Optionally specify a process ID
         Default will list all threads in an alertable state for all processes. Filters out low integrity processes to avoid isolated AppContainer threads.

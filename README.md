@@ -71,7 +71,7 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         200. NTAPI   -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
         201. NTAPI   -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         300. SysCall -- Direct, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory 
-        301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory 
+        301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
         302. SysCall -- Indirect, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         303. SysCall -- Indirect, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
 
@@ -82,9 +82,12 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         200. NTAPI   -- NtCreateThreadEx
         201. NTAPI   -- RtlCreateUserThread
         202. NTAPI   -- NtQueueApcThread, NtResumeThread - Must Specify Thread ID
+        203. NTAPI   -- NtGetContextThread, NtSetContextThread - Thread ID Optional
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         302. SysCall -- Indirect, NtCreateThreadEx
         303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
+        304. Syscall -- Direct, NtGetContextThread, NtSetContextThread - Thread ID Optional
+        305. Syscall -- Indirect, NtGetContextThread, NtSetContextThread - Thread ID Optional
         400. Novel   -- ThreadlessInject, CreateEventW - does not honor memory option
         401. Novel   -- ThreadlessInject, LoadLibraryExW - does not honor memory option
