@@ -160,6 +160,11 @@ ThreadExec Options
                 try { AlertableThreads.Alertable.GetThreads(threadsToReturn, optionalPidForThreads); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }
             }
 
+            else if (command.ToLower() == "create"){
+                // TODO : create mode flags. create process
+                // gtinject create process "C:\Windows\System32\netsh.exe"
+            }
+
             else if (command.ToLower() == "inject")
             {
                 //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
@@ -214,7 +219,7 @@ ThreadExec Options
                             var resp = ThreadExec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
                             return;
                         }
-                        
+
                     }
 
                     // In the right circumstance, you could technically inject twice doing this, once in a valid memoption, and again here. 
