@@ -768,14 +768,76 @@ namespace GTInject.SysCalls
             public ulong LastExceptionFromRip;
         }
 
+        [Flags]
+        public enum ProcessCreationFlags : uint
+        {
+            CREATE_SUSPENDED = 0x00000004
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct STARTUPINFO
+        {
+            public uint cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public uint dwX;
+            public uint dwY;
+            public uint dwXSize;
+            public uint dwYSize;
+            public uint dwXCountChars;
+            public uint dwYCountChars;
+            public uint dwFillAttribute;
+            public uint dwFlags;
+            public ushort wShowWindow;
+            public ushort cbReserved2;
+            public IntPtr lpReserved2;
+            public IntPtr hStdInput;
+            public IntPtr hStdOutput;
+            public IntPtr hStdError;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public uint dwProcessId;
+            public uint dwThreadId;
+        }
+
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetThreadId(IntPtr hThread);
+
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(
+            ProcessAccess processAccess,
+            bool bInheritHandle,
+            uint processId);
+
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CreateProcess(
+            string lpApplicationName,
+            string lpCommandLine,
+            IntPtr lpProcessAttributes,
+            IntPtr lpThreadAttributes,
+            bool bInheritHandles,
+            ProcessCreationFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            string lpCurrentDirectory,
+            ref STARTUPINFO lpStartupInfo,
+            out PROCESS_INFORMATION lpProcessInformation);
 
         [DllImport("ntdll.dll")]
         public static extern NTSTATUS NtReadVirtualMemory(
-    IntPtr processHandle,
-    IntPtr baseAddress,
-    IntPtr buffer,
-    uint bytesToRead,
-    ref uint bytesRead);
+            IntPtr processHandle,
+            IntPtr baseAddress,
+            IntPtr buffer,
+            uint bytesToRead,
+            ref uint bytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -783,29 +845,28 @@ namespace GTInject.SysCalls
 
         [DllImport("ntdll.dll")]
         public static extern NTSTATUS NtFreeVirtualMemory(
-    IntPtr processHandle,
-    ref IntPtr baseAddress,
-    ref UIntPtr regionSize,
-    AllocationType freeType);
+            IntPtr processHandle,
+            ref IntPtr baseAddress,
+            ref UIntPtr regionSize,
+            AllocationType freeType);
 
 
         [DllImport("ntdll.dll")]
         public static extern void RtlInitUnicodeString(
-    ref UNICODE_STRING destinationString,
-    [MarshalAs(UnmanagedType.LPWStr)] string sourceString);
+            ref UNICODE_STRING destinationString,
+            [MarshalAs(UnmanagedType.LPWStr)] string sourceString);
 
         [DllImport("ntdll.dll")]
         public static extern NTSTATUS LdrLoadDll(
-    IntPtr filePath,
-    uint dwFlags,
-    ref UNICODE_STRING moduleFileName,
-
-    ref IntPtr moduleHandle);
+            IntPtr filePath,
+            uint dwFlags,
+            ref UNICODE_STRING moduleFileName,
+            ref IntPtr moduleHandle);
 
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWow64Process([In] IntPtr processHandle,
-[Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process);
+            [Out, MarshalAs(UnmanagedType.Bool)] out bool wow64Process);
 
 
         [DllImport("kernel32.dll")]
@@ -813,6 +874,9 @@ namespace GTInject.SysCalls
 
         [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetModuleHandle(string lpModuleName);
 
 
         [DllImport("kernel32.dll")]

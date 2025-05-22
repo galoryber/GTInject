@@ -11,6 +11,7 @@ It is largely inspired by the flexibility given within Brute Ratel, which made o
 
 ## Usage: GTInject.exe \<module> \<moduleArgs>
        GTInject.exe threads
+       GTInject.exe create process netsh.exe
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
        GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
 
@@ -22,8 +23,25 @@ It is largely inspired by the flexibility given within Brute Ratel, which made o
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
 
 Shellcode from your C2 will be multibyte XOR'd and written in various formats.
-
 This is intended to help you use the injection option later with better OpSec.
+
+## Create  -- for creating suspended processes and threads
+
+        GTInject.exe create <process||thread||sleepThread> <ProcessPath||PID>
+
+Used to create new processes or threads in Suspended states, or things like Early Bird injection or QueueUserAPC injection or Process Hollowing
+
+```create process ""C:\Windows\System32\netsh.exe""```
+- This would launch netsh.exe in a suspended state, use the inject module later
+
+```create thread 12345```
+- This would create a new suspended thread in an existing Process ID
+
+```create sleepThread 12345```
+- This would create a new thread in a DelayExecution wait state (by calling kernel32!SleepEx in the newly created thread)
+
+Threads work with APC injection, but NOT with Thread Hijacking (get/setThreadContext). APC was the goal, so I'm calling this 'working as designed'
+
 
 ## Threads  -- check for alertable threads:
 
@@ -37,6 +55,8 @@ By default, it filters out low and untrusted process integrities.
 Options include `GTinject.exe threads <all or alertable> <optional PID filter>` 
 
 So you could show all threads in a process with `GTInject.exe threads all 4321`
+
+Use QueueUserAPC injection with Suspended or DelayExecution threads
 
 
 ## Inject   -- choose a process injection method
@@ -71,7 +91,7 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         200. NTAPI   -- NtCreateSection, NtMapViewOfSection, RtlCopyMemory
         201. NTAPI   -- NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         300. SysCall -- Direct, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory 
-        301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory 
+        301. SysCall -- Direct, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
         302. SysCall -- Indirect, NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
         303. SysCall -- Indirect, NtCreateSection, NtMapViewOfSection, RtlCopyMemory
 
@@ -82,9 +102,18 @@ OPTIONALLY specify the TID (not all options need a Thread ID).
         200. NTAPI   -- NtCreateThreadEx
         201. NTAPI   -- RtlCreateUserThread
         202. NTAPI   -- NtQueueApcThread, NtResumeThread - Must Specify Thread ID
+        203. NTAPI   -- NtGetContextThread, NtSetContextThread - Thread ID Optional
         300. SysCall -- Direct, NtCreateThreadEx
         301. SysCall -- Direct, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
         302. SysCall -- Indirect, NtCreateThreadEx
         303. SysCall -- Indirect, NtQueueApcThread, NtResumeThread - Must Specify Thread ID
+        304. Syscall -- Direct, NtGetContextThread, NtSetContextThread - Thread ID Optional
+        305. Syscall -- Indirect, NtGetContextThread, NtSetContextThread - Thread ID Optional
         400. Novel   -- ThreadlessInject, CreateEventW - does not honor memory option
         401. Novel   -- ThreadlessInject, LoadLibraryExW - does not honor memory option
+
+
+### To Do
+- add Process Hollowing options now that the create module can give us a suspended process
+- refactor the 'embedded disk url' options to auto determine based on https - UNC - or embedded keyword, one less argument for the command line
+- As always, add more techniques (Thread Pool Party would be nice)
