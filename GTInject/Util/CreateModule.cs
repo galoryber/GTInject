@@ -91,7 +91,7 @@ namespace GTInject.Util
             }
 
             // Get the address of the Sleep function in the kernel32.dll
-            IntPtr sleepAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "Sleep");
+            IntPtr sleepAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "SleepEx");
 
             if (sleepAddress == IntPtr.Zero)
             {
@@ -103,7 +103,7 @@ namespace GTInject.Util
                 IntPtr.Zero,
                 0,
                 sleepAddress,
-                (IntPtr)120000, // 2 minutes of delay execution state, you should inject within this time frame or the thread just goes away
+                (IntPtr)(120000 | 0x80000000), // 2 minutes of delay execution state, you should inject within this time frame or the thread just goes away
                 0, // Immediate execution
                 IntPtr.Zero);
 

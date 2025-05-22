@@ -59,12 +59,14 @@ Encrypt:
 Create:
         -- GTInject.exe create <process||thread||sleepThread> <ProcessPath||PID>
         Used to create new processes or threads in Suspended states, or things like Early Bird injection or QueueUserAPC injection or Process Hollowing
-        create process C:\Windows\System32\netsh.exe -- this would launch netsh.exe in a suspended state, use the inject module later
+        
+        create process ""C:\Windows\System32\netsh.exe"" -- this would launch netsh.exe in a suspended state, use the inject module later
         create thread 12345 -- this would create a new suspended thread in an existing Process ID
-        create sleepthread 12345 -- this would create a new thread in a DelayExecution wait state (by calling kernel32!Sleep in the newly created thread)
+        create sleepThread 12345 -- this would create a new thread in a DelayExecution wait state (by calling kernel32!SleepEx in the newly created thread)
+            sleepThread works with APC injection, but NOT with Thread Hijacking (get/setThreadContext) - APC was the goal, so I'm calling this 'working as designed'
 
 Threads:
-                --GTInject.exe threads alertable 10234 --
+        --GTInject.exe threads alertable 10234 --
         Specify 'alertable' or 'all' threads
         Optionally specify a process ID
         Default will list all threads in an alertable state for all processes. Filters out low integrity processes to avoid isolated AppContainer threads.
@@ -191,10 +193,11 @@ ThreadExec Options
                     var createdThreadInfo = CreateModule.CreateSuspendedThread((uint)createModProcessID, IntPtr.Zero); // specifying an empty StartAddress for this thread if this will work
                     Console.WriteLine("Thread created with empty start address with Handle in Decimal: " + createdThreadInfo);
                 }
-                else if(createObject == "sleepThread")
+                else if(createObject.ToLower() == "sleepthread")
                 {
                     //Doesn't currently work as desired. Successfully creates the thread in the delayexecution state, but injection doesn't the same, thread just sleeps, then exits, no injection takes place, despite success from injection calls
                     Console.WriteLine("Will create a thread that sleeps for 2 minutes, but APC injection here doesn't currently work. TBD");
+                    Console.WriteLine("  Currently works with Thread Hijacking (getthreadcontext, setthreadcontext) but only triggers after the 2 minutes timer is finished");
                     var createModProcessID = int.Parse(createObjectInfo);
                     Console.WriteLine("Creating thread in DelayExecution state for Process ID " + createModProcessID);
                     var createdThreadInfo = CreateModule.CreateDelayedExecutionThread((uint)createModProcessID);
