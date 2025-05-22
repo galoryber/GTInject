@@ -806,6 +806,11 @@ namespace GTInject.SysCalls
             public uint dwThreadId;
         }
 
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetThreadId(IntPtr hThread);
+
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(
             ProcessAccess processAccess,
@@ -813,7 +818,7 @@ namespace GTInject.SysCalls
             uint processId);
 
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool CreateProcess(
             string lpApplicationName,
             string lpCommandLine,
@@ -869,6 +874,9 @@ namespace GTInject.SysCalls
 
         [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetModuleHandle(string lpModuleName);
 
 
         [DllImport("kernel32.dll")]

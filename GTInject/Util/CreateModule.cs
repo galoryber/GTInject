@@ -12,14 +12,14 @@ namespace GTInject.Util
     internal class CreateModule
     {
 
-        public static PROCESS_INFORMATION CreateSuspendedProcess(string applicationPath)
+        public static PROCESS_INFORMATION CreateSuspendedProcess(string commandPath)
         {
             STARTUPINFO startupInfo = new STARTUPINFO();
             PROCESS_INFORMATION processInfo = new PROCESS_INFORMATION();
 
             if (!CreateProcess(
-                applicationPath,
                 null,
+                commandPath,
                 IntPtr.Zero,
                 IntPtr.Zero,
                 false,
@@ -31,7 +31,7 @@ namespace GTInject.Util
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
-
+            Console.WriteLine("  PROCESS_INFORMATION -> process ID " + processInfo.dwProcessId + " and handle in decimal " + processInfo.hProcess);
             return processInfo;
         }
 
@@ -65,14 +65,55 @@ namespace GTInject.Util
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
-
+            var newThreadID = GetThreadId(hThread);
+            Console.WriteLine("Process {0} now has Thread ID {1} ", processId, newThreadID );
             return hThread;
         }
-        
+
         // TODO: If possible, create other wait state threads - like DeleyExecution state threads
         // DelayExecution is what it sounds like - basiclaly just means something is sleeping for a time. 
         // Create thread with thread flags "immediate exectuion" but have the start address resolve to kernel32!Sleep for a defined time
         // Thread should start and be waiting
 
+        public static IntPtr CreateDelayedExecutionThread(uint processId)
+        {
+            IntPtr hProcess = OpenProcess(
+                ProcessAccess.CreateThread |
+                ProcessAccess.QueryInformation |
+                ProcessAccess.VmOperation |
+                ProcessAccess.VmRead |
+                ProcessAccess.VmWrite,
+                false, processId);
+
+            if (hProcess == IntPtr.Zero)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+
+            // Get the address of the Sleep function in the kernel32.dll
+            IntPtr sleepAddress = GetProcAddress(GetModuleHandle("kernel32.dll"), "Sleep");
+
+            if (sleepAddress == IntPtr.Zero)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+
+            IntPtr hThread = CreateRemoteThread(
+                hProcess,
+                IntPtr.Zero,
+                0,
+                sleepAddress,
+                (IntPtr)120000, // 2 minutes of delay execution state, you should inject within this time frame or the thread just goes away
+                0, // Immediate execution
+                IntPtr.Zero);
+
+            if (hThread == IntPtr.Zero)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            var newThreadID = GetThreadId(hThread);
+            Console.WriteLine("Process {0} now has Thread ID {1} ", processId, newThreadID);
+            return hThread;
+        }
     }
 }

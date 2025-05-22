@@ -19,6 +19,7 @@ namespace GTInject
             threads,
             inject,
             encrypt,
+            create,
             help
         }
   
@@ -162,25 +163,43 @@ ThreadExec Options
             }
 
             else if (command.ToLower() == "create"){
+                string createObject;
+                string createObjectInfo;
+                try
+                {
+                    createObject = args[1].ToString();
+                    createObjectInfo = args[2].ToString();
+                }
+                catch
+                {
+                    Console.WriteLine("Try again, read the help menu. Should be GTInject create something something like GTInject.exe create process C:\\windows\\system32\\netsh.exe");
+                    return;
+                }
                 // TODO : create mode flags. create process
                 // gtinject create process "C:\Windows\System32\netsh.exe"
-                var processInfo = args[2].ToString(); // This will either be a string, or an int, so lets bring it back as str now and flip to int when needed
-                if (args[1] == "process")
+                var processInfo = createObjectInfo; // This will either be a string, or an int, so lets bring it back as str now and flip to int when needed
+                if (createObject == "process")
                 {
                     Console.WriteLine("Creating suspended process " + processInfo);
                     var createdProcInfo = CreateModule.CreateSuspendedProcess(processInfo);
                     Console.WriteLine("Created: heres your PROCESS_INFORMATION : " + createdProcInfo);
                 }
-                else if (args[1] == "thread")
+                else if (createObject == "thread")
                 {
-                    var createModProcessID = int.Parse(processInfo);
+                    var createModProcessID = int.Parse(createObjectInfo);
                     Console.WriteLine("Creating suspended thread in existing process " + createModProcessID);
                     var createdThreadInfo = CreateModule.CreateSuspendedThread((uint)createModProcessID, IntPtr.Zero); // specifying an empty StartAddress for this thread if this will work
-                    Console.WriteLine("Thread created with empty start address : " + createdThreadInfo);
+                    Console.WriteLine("Thread created with empty start address with Handle in Decimal: " + createdThreadInfo);
                 }
-                else if(args[1] == "sleepThread")
+                else if(createObject == "sleepThread")
                 {
-                    Console.WriteLine("todo");
+                    //Doesn't currently work as desired. Successfully creates the thread in the delayexecution state, but injection doesn't the same, thread just sleeps, then exits, no injection takes place, despite success from injection calls
+                    Console.WriteLine("Will create a thread that sleeps for 2 minutes, but APC injection here doesn't currently work. TBD");
+                    var createModProcessID = int.Parse(createObjectInfo);
+                    Console.WriteLine("Creating thread in DelayExecution state for Process ID " + createModProcessID);
+                    var createdThreadInfo = CreateModule.CreateDelayedExecutionThread((uint)createModProcessID);
+                    Console.WriteLine("Thread created with empty start address with Handle in Decimal: " + createdThreadInfo);
+
                 }
                 else
                 {
