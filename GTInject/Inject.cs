@@ -1,15 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Globalization;
 using GTInject.memoryOptions;
 using GTInject.Injection;
 using System.Diagnostics;
-using System.Diagnostics.SymbolStore;
-using GTInject.Novel;
-using System.Net.Sockets;
+using GTInject.Util;
 
 namespace GTInject
 {
@@ -171,6 +164,28 @@ ThreadExec Options
             else if (command.ToLower() == "create"){
                 // TODO : create mode flags. create process
                 // gtinject create process "C:\Windows\System32\netsh.exe"
+                var processInfo = args[2].ToString(); // This will either be a string, or an int, so lets bring it back as str now and flip to int when needed
+                if (args[1] == "process")
+                {
+                    Console.WriteLine("Creating suspended process " + processInfo);
+                    var createdProcInfo = CreateModule.CreateSuspendedProcess(processInfo);
+                    Console.WriteLine("Created: heres your PROCESS_INFORMATION : " + createdProcInfo);
+                }
+                else if (args[1] == "thread")
+                {
+                    var createModProcessID = int.Parse(processInfo);
+                    Console.WriteLine("Creating suspended thread in existing process " + createModProcessID);
+                    var createdThreadInfo = CreateModule.CreateSuspendedThread((uint)createModProcessID, IntPtr.Zero); // specifying an empty StartAddress for this thread if this will work
+                    Console.WriteLine("Thread created with empty start address : " + createdThreadInfo);
+                }
+                else if(args[1] == "sleepThread")
+                {
+                    Console.WriteLine("todo");
+                }
+                else
+                {
+                    Console.WriteLine("No valid create module arguments were given");
+                }
             }
 
             else if (command.ToLower() == "inject")

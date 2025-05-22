@@ -69,6 +69,7 @@
     <Compile Include="Novel\Novel.cs" />
     <Compile Include="Novel\ThreadlessInject.cs" />
     <Compile Include="Util\Alertable.cs" />
+    <Compile Include="Util\CreateModule.cs" />
     <Compile Include="Util\EncryptBin.cs" />
     <Compile Include="Util\GetShellcode.cs" />
     <Compile Include="Inject.cs" />
