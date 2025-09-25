@@ -9,14 +9,14 @@ namespace GTInject.Novel
 {
     internal class Novel
     {
-        public static (IntPtr, Process) SelectNovelMemOption(int memoption, string xorkey, string binsrctype, string binsrcpath, int pid, int tid)
+        public static (IntPtr, Process) SelectNovelMemOption(int memoption, string xorkey, string binsrcpath, int pid, int tid)
         {
             switch (memoption)
             {
                 case 400:
-                    return novelMem400(binsrctype, binsrcpath, xorkey, pid);
+                    return novelMem400(binsrcpath, xorkey, pid);
                 case 401:
-                    return novelMem401(binsrctype, binsrcpath, xorkey, pid);
+                    return novelMem401(binsrcpath, xorkey, pid);
                 default:
                     Console.WriteLine("[-] Not a valid novel mem technique integer");
                     return (IntPtr.Zero, null);
@@ -24,14 +24,14 @@ namespace GTInject.Novel
 
         }
 
-        public static IntPtr SelectNovelExecOption(int execoption, string xorkey, string binsrctype, string binsrcpath, int pid, int tid)
+        public static IntPtr SelectNovelExecOption(int execoption, string xorkey, string binsrcpath, int pid, int tid)
         {
             switch (execoption)
             {
                 case 400:
-                    return novelExec400(binsrctype, binsrcpath, xorkey, pid);
+                    return novelExec400(binsrcpath, xorkey, pid);
                 case 401:
-                    return novelExec401(binsrctype, binsrcpath, xorkey, pid);
+                    return novelExec401(binsrcpath, xorkey, pid);
                 default:
                     Console.WriteLine("[-] Not a valid novel exec technique integer");
                     return (IntPtr.Zero);
@@ -41,7 +41,7 @@ namespace GTInject.Novel
 
         // NOVEL MEMORY OPTIONS
 
-        private static (IntPtr, Process) novelMem400(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) novelMem400(string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
@@ -50,7 +50,7 @@ namespace GTInject.Novel
             return (IntPtr.Zero, null);
 
         }
-        private static (IntPtr, Process) novelMem401(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static (IntPtr, Process) novelMem401(string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
@@ -62,24 +62,24 @@ namespace GTInject.Novel
 
         // NOVEL EXECUTION OPTIONS
 
-        private static IntPtr novelExec400(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static IntPtr novelExec400(string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
             // OPTION 400 == Threadless Inject - CreateEventW
             /////////////////////////////////////
             ///
-            ThreadlessInject.Inject(ProcID, "kernelbase.dll", "CreateEventW", binLocation, bytePath, xorkey);
+            ThreadlessInject.Inject(ProcID, "kernelbase.dll", "CreateEventW", bytePath, xorkey);
             return (IntPtr.Zero);
         }
 
-        private static IntPtr novelExec401(string binLocation, string bytePath, string xorkey, int ProcID)
+        private static IntPtr novelExec401(string bytePath, string xorkey, int ProcID)
         {
             // //  GTInject.exe inject memoryOption execOption xorkey binSrcType binSourcePath PID TID
             /////////////////////////////////////
             // OPTION 400 == Threadless Inject - LoadLibraryExW
             /////////////////////////////////////
-            ThreadlessInject.Inject(ProcID, "kernel32.dll", "LoadLibraryExW", binLocation, bytePath, xorkey);
+            ThreadlessInject.Inject(ProcID, "kernel32.dll", "LoadLibraryExW", bytePath, xorkey);
             return (IntPtr.Zero);
 
         }

