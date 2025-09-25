@@ -26,7 +26,7 @@ namespace GTInject
                 Console.WriteLine("Not a valid command, try GTInject.exe help\n");
                 return;
             }
-            else if (command.ToLower() == "help") 
+            else if (command.ToLower() == "help")
             {
                 string helptext = @"
 Usage: GTInject.exe <module> <moduleArgs>
@@ -110,7 +110,7 @@ ThreadExec Options
 
 ";
                 Console.WriteLine(helptext);
-             }
+            }
 
             else if (command.ToLower() == "encrypt")
             {
@@ -123,7 +123,7 @@ ThreadExec Options
                 }
                 catch
                 {
-                    Console.WriteLine( "[-] You didn't include the needed arguments for GTInject.exe encrypt <sourceBinPath> <yourXorKeyString>");
+                    Console.WriteLine("[-] You didn't include the needed arguments for GTInject.exe encrypt <sourceBinPath> <yourXorKeyString>");
                     return;
                 }
                 EncryptBin.EncryptBin.EncryptShellcode(binPath, xorkey);
@@ -138,7 +138,7 @@ ThreadExec Options
                 {
                     threadsToReturn = args[1];
                 }
-                catch  (IndexOutOfRangeException)
+                catch (IndexOutOfRangeException)
                 {
                     Console.WriteLine("Returning Alertable Threads");
                 }
@@ -158,7 +158,8 @@ ThreadExec Options
                 try { AlertableThreads.Alertable.GetThreads(threadsToReturn, optionalPidForThreads); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }
             }
 
-            else if (command.ToLower() == "create"){
+            else if (command.ToLower() == "create")
+            {
                 string createObject;
                 string createObjectInfo;
                 try
@@ -187,7 +188,7 @@ ThreadExec Options
                     var createdThreadInfo = CreateModule.CreateSuspendedThread((uint)createModProcessID, IntPtr.Zero); // specifying an empty StartAddress for this thread if this will work
                     Console.WriteLine("Thread created with empty start address with Handle in Decimal: " + createdThreadInfo);
                 }
-                else if(createObject.ToLower() == "sleepthread")
+                else if (createObject.ToLower() == "sleepthread")
                 {
                     //Doesn't currently work as desired. Successfully creates the thread in the delayexecution state, but injection doesn't the same, thread just sleeps, then exits, no injection takes place, despite success from injection calls
                     Console.WriteLine("Will create a thread that sleeps for 2 minutes, but APC injection here doesn't currently work. TBD");
@@ -220,7 +221,7 @@ ThreadExec Options
                     execOption = int.Parse(args[2]);
                     xorkey = args[3];
                     binSrcPath = args[4];
-                    Console.WriteLine("     Shellcode will be called from:  {1}", binSrcPath);
+                    Console.WriteLine("     Shellcode will be called from: {0}", binSrcPath);
                     Pid = int.Parse(args[5]);
                     try
                     {
@@ -231,9 +232,11 @@ ThreadExec Options
                         Console.WriteLine("     Tid not entered as an arg, not an issue at this point, just catch to handle the exception");
                         //Tid = 0;
                     }
+
                 }
-                catch (Exception ex) {
-                    Console.WriteLine($"[-] Other exception : {ex.Message}");
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[-] Other exception {ex.GetBaseException() }: {ex.Message}");
                     return;
                 }
                 IntPtr memoryResponse = IntPtr.Zero;
@@ -275,6 +278,11 @@ ThreadExec Options
                     ThreadExec.SelectThreadOption(memoryResponse, execOption, pidResp, Tid);
                     return;
                 }
+            }
+
+            else
+            {
+                Console.WriteLine("No valid module selected. Use GTInject.exe moduleName followed by the appropriate flags");
             }
  
         }
